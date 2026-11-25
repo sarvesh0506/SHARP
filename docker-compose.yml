@@ -1,0 +1,143 @@
+version: '3.8'
+
+services:
+  # 1. PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: sharp-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-sharp_db}
+      POSTGRES_USER: ${DB_USER:-sharp_admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-sharp_secure_password_2026}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-sharp_admin} -d ${DB_NAME:-sharp_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sharp-network
+
+  # 2. Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: sharp-redis
+    restart: unless-stopped
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+      - ./infrastructure/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sharp-network
+
+  # 3. Spring Boot Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: sharp/backend:latest
+    container_name: sharp-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: 8080
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-sharp_db}
+      DB_USER: ${DB_USER:-sharp_admin}
+      DB_PASSWORD: ${DB_PASSWORD:-sharp_secure_password_2026}
+      JWT_SECRET: ${JWT_SECRET:-4c5f928e1d2b3a4c5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d}
+      AI_SERVICE_URL: http://ai-service:8000
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    networks:
+      - sharp-network
+
+  # 4. AI Intelligence Service (FastAPI)
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    image: sharp/ai-service:latest
+    container_name: sharp-ai-service
+    restart: unless-stopped
+    environment:
+      AI_SERVICE_PORT: 8000
+      BACKEND_URL: http://backend:8080/api/v1
+    ports:
+      - "${AI_SERVICE_PORT:-8000}:8000"
+    networks:
+      - sharp-network
+
+  # 5. Frontend Dashboard (React 19 / Nginx)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: sharp/frontend:latest
+    container_name: sharp-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    networks:
+      - sharp-network
+
+  # 6. Prometheus Telemetry Scraper
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: sharp-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    networks:
+      - sharp-network
+
+  # 7. Grafana Dashboard Visualizer
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: sharp-grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-sharp_grafana_admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    networks:
+      - sharp-network
+
+networks:
+  sharp-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:

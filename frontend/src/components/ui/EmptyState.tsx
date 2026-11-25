@@ -1,0 +1,17 @@
+import React from 'react';
+
+interface EmptyStateProps {
+  icon?: React.ReactNode;
+  title: string;
+  description?: string;
+  action?: React.ReactNode;
+}
+
+export const EmptyState: React.FC<EmptyStateProps> = ({ icon, title, description, action }) => (
+  <div className="flex flex-col items-center justify-center py-16 text-center">
+    {icon && <div className="mb-4 text-slate-600">{icon}</div>}
+    <h3 className="text-sm font-semibold text-slate-300 mb-1">{title}</h3>
+    {description && <p className="text-xs text-slate-500 max-w-sm">{description}</p>}
+    {action && <div className="mt-4">{action}</div>}
+  </div>
+);
