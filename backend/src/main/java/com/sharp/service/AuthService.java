@@ -65,7 +65,18 @@ public class AuthService {
             throw new ApiException("Email is already in use!", HttpStatus.CONFLICT);
         }
 
-        Role role = request.getRole() != null ? request.getRole() : Role.ROLE_OPERATOR;
+        Role role = Role.ROLE_OPERATOR;
+        if (request.getRole() == Role.ROLE_ADMIN) {
+            long existingAdmins = userRepository.countByRole(Role.ROLE_ADMIN);
+            if (existingAdmins > 0) {
+                throw new ApiException(
+                        "Administrator self-registration is restricted. Public accounts are provisioned as OPERATOR.",
+                        HttpStatus.FORBIDDEN
+                );
+            }
+            // Allow initial administrator bootstrap only when no administrator exists in the system
+            role = Role.ROLE_ADMIN;
+        }
 
         User user = User.builder()
                 .username(request.getUsername())

@@ -2,36 +2,60 @@ import React, { useEffect, useState } from 'react';
 import apiClient from '../api/client';
 import { Application } from '../types';
 import { StatusBadge } from '../components/ui/StatusBadge';
+import { ErrorBanner } from '../components/ui/Banners';
 import { useAuth } from '../contexts/AuthContext';
-import { Layers, Plus, RefreshCw, Trash2, Container, Activity } from 'lucide-react';
+import { Plus, RefreshCw, Trash2, Container, Pencil, AlertTriangle } from 'lucide-react';
+
+interface ApplicationFormState {
+  name: string;
+  description: string;
+  dockerContainerId: string;
+  dockerImage: string;
+  healthEndpoint: string;
+  port: number;
+  isAutoRecoveryEnabled: boolean;
+}
+
+const INITIAL_FORM: ApplicationFormState = {
+  name: '',
+  description: '',
+  dockerContainerId: '',
+  dockerImage: '',
+  healthEndpoint: '/health',
+  port: 8080,
+  isAutoRecoveryEnabled: true,
+};
 
 export const ApplicationsPage: React.FC = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const { isAdmin } = useAuth();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
 
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    dockerContainerId: '',
-    dockerImage: '',
-    healthEndpoint: '/health',
-    port: 8080,
-    isAutoRecoveryEnabled: true,
-  });
+  const [showModal, setShowModal] = useState(false);
+  const [editingApp, setEditingApp] = useState<Application | null>(null);
+  const [formData, setFormData] = useState<ApplicationFormState>(INITIAL_FORM);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const [deleteTarget, setDeleteTarget] = useState<Application | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const { isAdmin } = useAuth();
 
   const fetchApplications = async () => {
     try {
-      setLoading(true);
+      setIsRefreshing(true);
       const res = await apiClient.get('/applications');
-      if (res.data && res.data.data) {
-        setApplications(res.data.data);
-      }
-    } catch (err) {
+      setApplications(res.data?.data ?? []);
+      setError(null);
+    } catch (err: any) {
       console.error('Failed to load applications:', err);
+      setError(err?.response?.data?.message || 'Unable to load applications from SHARP backend.');
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -39,34 +63,88 @@ export const ApplicationsPage: React.FC = () => {
     fetchApplications();
   }, []);
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const openCreateModal = () => {
+    setEditingApp(null);
+    setFormData(INITIAL_FORM);
+    setFormError(null);
+    setShowModal(true);
+  };
+
+  const openEditModal = (app: Application) => {
+    setEditingApp(app);
+    setFormData({
+      name: app.name || '',
+      description: app.description || '',
+      dockerContainerId: app.dockerContainerId || '',
+      dockerImage: app.dockerImage || '',
+      healthEndpoint: app.healthEndpoint || '/health',
+      port: app.port ?? 8080,
+      isAutoRecoveryEnabled: app.isAutoRecoveryEnabled ?? true,
+    });
+    setFormError(null);
+    setShowModal(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
+    setFeedback(null);
+
+    if (!formData.name.trim()) {
+      setFormError('Application name is required.');
+      return;
+    }
+    if (!Number.isInteger(formData.port) || formData.port < 1 || formData.port > 65535) {
+      setFormError('Port must be a valid number between 1 and 65535.');
+      return;
+    }
+
+    const payload = {
+      name: formData.name.trim(),
+      description: formData.description.trim() || null,
+      dockerContainerId: formData.dockerContainerId.trim() || null,
+      dockerImage: formData.dockerImage.trim() || null,
+      healthEndpoint: formData.healthEndpoint.trim() || '/health',
+      port: formData.port,
+      isAutoRecoveryEnabled: formData.isAutoRecoveryEnabled,
+    };
+
     try {
-      await apiClient.post('/applications', formData);
+      setSubmitting(true);
+      if (editingApp) {
+        await apiClient.put(`/applications/${editingApp.id}`, payload);
+        setFeedback(`Application "${payload.name}" updated successfully.`);
+      } else {
+        await apiClient.post('/applications', payload);
+        setFeedback(`Application "${payload.name}" registered successfully.`);
+      }
       setShowModal(false);
-      setFormData({
-        name: '',
-        description: '',
-        dockerContainerId: '',
-        dockerImage: '',
-        healthEndpoint: '/health',
-        port: 8080,
-        isAutoRecoveryEnabled: true,
-      });
-      fetchApplications();
-    } catch (err) {
-      console.error('Failed to register application:', err);
-      alert('Error registering application. Please check input details.');
+      setEditingApp(null);
+      setFormData(INITIAL_FORM);
+      await fetchApplications();
+    } catch (err: any) {
+      console.error('Failed to save application:', err);
+      setFormError(err?.response?.data?.message || 'Error saving application. Please verify your inputs.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Are you sure you want to de-register this application?')) return;
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await apiClient.delete(`/applications/${id}`);
-      fetchApplications();
-    } catch (err) {
+      setDeleting(true);
+      setFeedback(null);
+      await apiClient.delete(`/applications/${deleteTarget.id}`);
+      setFeedback(`Application "${deleteTarget.name}" de-registered.`);
+      setDeleteTarget(null);
+      await fetchApplications();
+    } catch (err: any) {
       console.error('Failed to delete application:', err);
+      setError(err?.response?.data?.message || 'Failed to delete application. Administrator role required.');
+      setDeleteTarget(null);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -83,7 +161,15 @@ export const ApplicationsPage: React.FC = () => {
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setShowModal(true)}
+            onClick={fetchApplications}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-dark-850 hover:bg-dark-800 border border-dark-700 text-xs text-slate-300 font-medium transition disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-[#7C3AED]' : ''}`} />
+            Refresh
+          </button>
+          <button
+            onClick={openCreateModal}
             className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-medium shadow-md shadow-[#7C3AED]/20 transition"
           >
             <Plus className="w-4 h-4" />
@@ -91,6 +177,14 @@ export const ApplicationsPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {error && <ErrorBanner message={error} onRetry={fetchApplications} />}
+
+      {feedback && (
+        <div className="p-3.5 rounded-xl bg-[#34D399]/10 border border-[#34D399]/35 text-[#34D399] text-xs font-mono">
+          {feedback}
+        </div>
+      )}
 
       {/* Applications Table */}
       <div className="bg-dark-900 border border-dark-700/80 rounded-xl overflow-hidden shadow-lg">
@@ -118,7 +212,9 @@ export const ApplicationsPage: React.FC = () => {
               ) : applications.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center py-8 text-slate-500 font-mono">
-                    No applications registered yet. Click 'Register Application' above to add your first Docker container.
+                    {error
+                      ? 'Unable to display applications due to backend connection failure.'
+                      : "No applications registered yet. Click 'Register Application' above to add your first Docker container."}
                   </td>
                 </tr>
               ) : (
@@ -149,18 +245,27 @@ export const ApplicationsPage: React.FC = () => {
                       <div className="text-slate-500">MEM: {app.memoryUsage}%</div>
                     </td>
                     <td className="py-3.5 px-4">
-                      <span className={`text-[11px] font-mono px-2 py-0.5 rounded border ${
-                        app.isAutoRecoveryEnabled
-                          ? 'bg-[#7C3AED]/15 text-[#A78BFA] border-[#7C3AED]/35'
-                          : 'bg-dark-800 text-slate-500 border-dark-700'
-                      }`}>
+                      <span
+                        className={`text-[11px] font-mono px-2 py-0.5 rounded border ${
+                          app.isAutoRecoveryEnabled
+                            ? 'bg-[#7C3AED]/15 text-[#A78BFA] border-[#7C3AED]/35'
+                            : 'bg-dark-800 text-slate-500 border-dark-700'
+                        }`}
+                      >
                         {app.isAutoRecoveryEnabled ? 'ENABLED' : 'MANUAL ONLY'}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 text-right">
+                    <td className="py-3.5 px-4 text-right space-x-1">
+                      <button
+                        onClick={() => openEditModal(app)}
+                        className="p-1.5 text-slate-400 hover:text-[#22D3EE] hover:bg-dark-800 rounded transition"
+                        title="Edit Application"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
                       {isAdmin && (
                         <button
-                          onClick={() => handleDelete(app.id)}
+                          onClick={() => setDeleteTarget(app)}
                           className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-dark-800 rounded transition"
                           title="De-register Application"
                         >
@@ -176,15 +281,22 @@ export const ApplicationsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Registration Modal */}
+      {/* Create / Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-dark-900 border border-dark-700 rounded-xl p-6 max-w-md w-full shadow-2xl">
             <h2 className="text-lg font-bold text-slate-100 font-mono mb-4 flex items-center gap-2">
               <Container className="w-5 h-5 text-[#A78BFA]" />
-              Register New Application
+              {editingApp ? `Edit Application #${editingApp.id}` : 'Register New Application'}
             </h2>
-            <form onSubmit={handleCreate} className="space-y-4 text-xs">
+
+            {formError && (
+              <div className="mb-4 p-3 rounded-lg bg-[#F43F5E]/10 border border-[#F43F5E]/40 text-[#F43F5E] text-xs">
+                {formError}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4 text-xs">
               <div>
                 <label className="block text-slate-300 font-medium mb-1">Application Name *</label>
                 <input
@@ -223,8 +335,10 @@ export const ApplicationsPage: React.FC = () => {
                   <label className="block text-slate-300 font-medium mb-1">Port</label>
                   <input
                     type="number"
+                    min={1}
+                    max={65535}
                     value={formData.port}
-                    onChange={(e) => setFormData({ ...formData, port: parseInt(e.target.value) || 80 })}
+                    onChange={(e) => setFormData({ ...formData, port: parseInt(e.target.value, 10) || 0 })}
                     className="w-full bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-[#7C3AED] font-mono"
                   />
                 </div>
@@ -258,7 +372,7 @@ export const ApplicationsPage: React.FC = () => {
                   id="autoRecovery"
                   checked={formData.isAutoRecoveryEnabled}
                   onChange={(e) => setFormData({ ...formData, isAutoRecoveryEnabled: e.target.checked })}
-                  className="rounded bg-dark-800 border-dark-700 text-blue-600 focus:ring-0"
+                  className="rounded bg-dark-800 border-dark-700 accent-[#7C3AED]"
                 />
                 <label htmlFor="autoRecovery" className="text-slate-300">
                   Enable Autonomous Self-Healing Recovery Policies
@@ -268,19 +382,60 @@ export const ApplicationsPage: React.FC = () => {
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-dark-800">
                 <button
                   type="button"
+                  disabled={submitting}
                   onClick={() => setShowModal(false)}
-                  className="px-3 py-1.5 rounded-lg bg-dark-800 text-slate-300 hover:bg-dark-700 transition"
+                  className="px-3 py-1.5 rounded-lg bg-dark-800 text-slate-300 hover:bg-dark-700 transition disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 rounded-lg bg-[#7C3AED] text-white font-medium hover:bg-[#6D28D9] transition"
+                  disabled={submitting}
+                  className="px-4 py-1.5 rounded-lg bg-[#7C3AED] text-white font-medium hover:bg-[#6D28D9] transition disabled:opacity-50"
                 >
-                  Confirm & Register
+                  {submitting
+                    ? editingApp
+                      ? 'Saving...'
+                      : 'Registering...'
+                    : editingApp
+                    ? 'Save Changes'
+                    : 'Confirm & Register'}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Delete Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-dark-900 border border-[#F43F5E]/40 rounded-xl p-6 max-w-sm w-full shadow-2xl space-y-4">
+            <div className="flex items-center gap-2 text-[#F43F5E] font-mono font-bold text-sm">
+              <AlertTriangle className="w-5 h-5" />
+              Confirm De-registration
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Are you sure you want to remove <strong className="text-white">{deleteTarget.name}</strong> from the SHARP application registry?
+            </p>
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => setDeleteTarget(null)}
+                className="px-3 py-1.5 rounded-lg bg-dark-800 text-slate-300 hover:bg-dark-700 text-xs transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={handleConfirmDelete}
+                className="px-4 py-1.5 rounded-lg bg-[#F43F5E] hover:bg-rose-600 text-white text-xs font-medium transition disabled:opacity-50"
+              >
+                {deleting ? 'Removing...' : 'De-register'}
+              </button>
+            </div>
           </div>
         </div>
       )}

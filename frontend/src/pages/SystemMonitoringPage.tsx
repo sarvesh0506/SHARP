@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Monitor, Cpu, HardDrive, RefreshCw, Wifi, Server } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Monitor, Cpu, HardDrive, RefreshCw, Wifi, Server, Clock, Play } from 'lucide-react';
 import { PageHeader } from '../components/ui/PageHeader';
 import { StatCard } from '../components/ui/StatCard';
 import { MetricBar } from '../components/ui/MetricBar';
-import { UnavailableBanner } from '../components/ui/Banners';
+import { StatusBadge } from '../components/ui/StatusBadge';
+import { ErrorBanner } from '../components/ui/Banners';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -15,27 +16,39 @@ import {
   Legend,
 } from 'recharts';
 import apiClient from '../api/client';
-import { MonitoredServer } from '../types';
+import { CollectorStatus, SystemMetric } from '../types';
 
-// Demo telemetry for visualization — labeled as DEMO clearly
-const DEMO_HISTORY = Array.from({ length: 20 }, (_, i) => {
-  const t = new Date(Date.now() - (19 - i) * 5000);
-  return {
-    time: t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-    cpu: 30 + Math.sin(i * 0.6) * 18 + Math.random() * 8,
-    memory: 55 + Math.cos(i * 0.4) * 12 + Math.random() * 5,
-    disk: 38 + Math.sin(i * 0.2) * 4 + Math.random() * 2,
-  };
-});
+const formatBytes = (bytes: number | null | undefined): string => {
+  if (bytes == null) return 'N/A';
+  const gb = bytes / (1024 * 1024 * 1024);
+  if (gb >= 1) return `${gb.toFixed(2)} GB`;
+  const mb = bytes / (1024 * 1024);
+  return `${mb.toFixed(1)} MB`;
+};
+
+const formatRate = (bps: number | null | undefined): string => {
+  if (bps == null) return 'Calculating...';
+  if (bps >= 1024 * 1024) return `${(bps / (1024 * 1024)).toFixed(2)} MB/s`;
+  if (bps >= 1024) return `${(bps / 1024).toFixed(1)} KB/s`;
+  return `${bps.toFixed(0)} B/s`;
+};
+
+const formatUptime = (sec: number | null | undefined): string => {
+  if (sec == null) return 'N/A';
+  const d = Math.floor(sec / 86400);
+  const h = Math.floor((sec % 86400) / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  return d > 0 ? `${d}d ${h}h ${m}m` : `${h}h ${m}m`;
+};
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-dark-850 border border-dark-600 rounded-lg p-3 text-xs font-mono shadow-xl">
-        <p className="text-slate-400 mb-1">{label}</p>
+      <div className="bg-[#1B2540] border border-[#26324A] rounded-lg p-3 text-xs font-mono shadow-xl text-[#E2E8F0]">
+        <p className="text-[#94A3B8] mb-1">{label}</p>
         {payload.map((p: any) => (
           <p key={p.name} style={{ color: p.color }}>
-            {p.name}: {p.value.toFixed(1)}%
+            {p.name}: {p.value != null ? `${Number(p.value).toFixed(1)}%` : 'N/A'}
           </p>
         ))}
       </div>
@@ -45,242 +58,283 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export const SystemMonitoringPage: React.FC = () => {
-  const [servers, setServers] = useState<MonitoredServer[]>([]);
+  const [latest, setLatest] = useState<SystemMetric | null>(null);
+  const [history, setHistory] = useState<SystemMetric[]>([]);
+  const [collectorStatus, setCollectorStatus] = useState<CollectorStatus | null>(null);
+  const [timeRange, setTimeRange] = useState<'15m' | '1h' | '6h' | '24h'>('1h');
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [selectedServer, setSelectedServer] = useState<MonitoredServer | null>(null);
+  const [triggering, setTriggering] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchServers = async () => {
+  const fetchMetrics = useCallback(async () => {
     try {
       setIsRefreshing(true);
-      const res = await apiClient.get('/servers');
-      if (res.data?.data) {
-        const list: MonitoredServer[] = res.data.data;
-        setServers(list);
-        if (!selectedServer && list.length > 0) setSelectedServer(list[0]);
-      }
-    } catch {
-      // silently handled — servers may be empty on fresh install
+      const now = new Date();
+      const hoursMap = { '15m': 0.25, '1h': 1, '6h': 6, '24h': 24 };
+      const from = new Date(now.getTime() - hoursMap[timeRange] * 3600 * 1000).toISOString();
+
+      const [latestRes, histRes, statusRes] = await Promise.all([
+        apiClient.get('/monitoring/system/latest'),
+        apiClient.get('/monitoring/system/history', {
+          params: { from, to: now.toISOString(), limit: 200 },
+        }),
+        apiClient.get('/monitoring/collector/status'),
+      ]);
+
+      setLatest(latestRes.data?.data ?? null);
+      setHistory(histRes.data?.data ?? []);
+      setCollectorStatus(statusRes.data?.data ?? null);
+      setError(null);
+    } catch (err: any) {
+      console.error('Failed to load host telemetry:', err);
+      setError(err?.response?.data?.message || 'Unable to load host system telemetry from backend.');
     } finally {
       setLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, [timeRange]);
 
   useEffect(() => {
-    fetchServers();
-    const id = setInterval(fetchServers, 15000);
+    fetchMetrics();
+    const id = setInterval(fetchMetrics, 10000);
     return () => clearInterval(id);
-  }, []);
+  }, [fetchMetrics]);
 
-  const target = selectedServer ?? servers[0] ?? null;
+  const handleCollectNow = async () => {
+    try {
+      setTriggering(true);
+      await apiClient.post('/monitoring/collector/collect');
+      await fetchMetrics();
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Manual collection trigger failed.');
+    } finally {
+      setTriggering(false);
+    }
+  };
+
+  const chartData = history.map((m) => ({
+    time: new Date(m.collectedAt).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }),
+    cpu: m.cpuPercent,
+    memory: m.memoryPercent,
+    disk: m.diskPercent,
+  }));
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="System Monitoring"
-        subtitle="Host-level resource utilization, registered infrastructure targets, and health status."
-        onRefresh={fetchServers}
+        subtitle="Real-time host CPU, memory, disk, network throughput, and collector health."
+        onRefresh={fetchMetrics}
         isRefreshing={isRefreshing}
+        badge={collectorStatus ? <StatusBadge status={collectorStatus.status} /> : undefined}
+        actions={
+          <div className="flex items-center gap-2">
+            <div className="flex rounded-lg bg-dark-900 border border-dark-700 p-0.5 text-[11px] font-mono">
+              {(['15m', '1h', '6h', '24h'] as const).map((r) => (
+                <button
+                  key={r}
+                  onClick={() => setTimeRange(r)}
+                  className={`px-2.5 py-1 rounded-md transition ${
+                    timeRange === r ? 'bg-[#7C3AED]/20 text-[#A78BFA]' : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={handleCollectNow}
+              disabled={triggering}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-medium transition disabled:opacity-50"
+            >
+              <Play className="w-3.5 h-3.5" />
+              {triggering ? 'Collecting...' : 'Collect Now'}
+            </button>
+          </div>
+        }
       />
 
-      <UnavailableBanner
-        feature="Live metric collection"
-        message="Phase 2 backend polling (SentinelPollingService) not yet active. Charts below display structural demo data. Registered servers are loaded from the live backend."
-      />
+      {error && <ErrorBanner message={error} onRetry={fetchMetrics} />}
 
-      {/* Stats row */}
+      {/* KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Registered Targets"
-          value={servers.length}
-          subtitle={`${servers.filter((s) => s.status === 'ONLINE').length} Online`}
-          icon={Server}
-          color="text-[#A78BFA]"
-        />
-        <StatCard
-          title="Avg CPU"
-          value={
-            servers.length
-              ? `${(servers.reduce((a, s) => a + s.cpuUsage, 0) / servers.length).toFixed(1)}%`
-              : 'N/A'
-          }
-          subtitle="Across registered hosts"
+          title="Host CPU"
+          value={latest?.cpuPercent != null ? `${latest.cpuPercent.toFixed(1)}%` : 'N/A'}
+          subtitle={latest?.hostName || 'Awaiting telemetry'}
           icon={Cpu}
-          color="text-cyan-400"
+          color="text-[#22D3EE]"
         />
         <StatCard
-          title="Avg Memory"
-          value={
-            servers.length
-              ? `${(servers.reduce((a, s) => a + s.memoryUsage, 0) / servers.length).toFixed(1)}%`
-              : 'N/A'
+          title="Host Memory"
+          value={latest?.memoryPercent != null ? `${latest.memoryPercent.toFixed(1)}%` : 'N/A'}
+          subtitle={
+            latest ? `${formatBytes(latest.memoryUsedBytes)} / ${formatBytes(latest.memoryTotalBytes)}` : 'Awaiting telemetry'
           }
-          subtitle="Across registered hosts"
           icon={Monitor}
-          color="text-indigo-400"
+          color="text-[#7C3AED]"
         />
         <StatCard
-          title="Avg Disk"
-          value={
-            servers.length
-              ? `${(servers.reduce((a, s) => a + s.diskUsage, 0) / servers.length).toFixed(1)}%`
-              : 'N/A'
+          title="Disk Utilization"
+          value={latest?.diskPercent != null ? `${latest.diskPercent.toFixed(1)}%` : 'N/A'}
+          subtitle={
+            latest ? `${formatBytes(latest.diskUsedBytes)} / ${formatBytes(latest.diskTotalBytes)}` : 'Awaiting telemetry'
           }
-          subtitle="Across registered hosts"
           icon={HardDrive}
-          color="text-emerald-400"
+          color="text-[#34D399]"
+        />
+        <StatCard
+          title="System Uptime"
+          value={formatUptime(latest?.uptimeSeconds)}
+          subtitle={latest?.osName || 'Host OS'}
+          icon={Clock}
+          color="text-[#A78BFA]"
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Server list */}
-        <div className="bg-dark-900 border border-dark-700/80 rounded-xl overflow-hidden shadow-lg">
-          <div className="p-4 bg-dark-850 border-b border-dark-700 text-xs font-mono text-slate-300 font-semibold uppercase flex justify-between">
-            <span>Infrastructure Targets</span>
-            <span className="text-slate-500">{servers.length}</span>
-          </div>
-          <div className="divide-y divide-dark-800">
-            {loading ? (
-              <div className="p-8 text-center text-slate-500 text-xs font-mono">
-                <RefreshCw className="w-4 h-4 animate-spin inline mr-2 text-[#7C3AED]" />
-                Loading targets...
+      {loading && !latest ? (
+        <div className="bg-dark-900 border border-dark-700/80 rounded-xl p-12 text-center text-slate-500 font-mono text-xs">
+          <RefreshCw className="w-5 h-5 animate-spin inline mr-2 text-[#22D3EE]" />
+          Loading real host telemetry...
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Host & Collector Details */}
+          <div className="bg-dark-900 border border-dark-700/80 rounded-xl p-5 shadow-lg space-y-5">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                <Server className="w-4 h-4 text-[#22D3EE]" />
+                Host & Collector Info
+              </h2>
+              {collectorStatus && (
+                <span className="text-[11px] font-mono text-slate-400">
+                  Every {collectorStatus.intervalSeconds}s
+                </span>
+              )}
+            </div>
+
+            {latest ? (
+              <>
+                <div className="space-y-3">
+                  {latest.cpuPercent != null ? (
+                    <MetricBar label="CPU Utilization" value={latest.cpuPercent} color="bg-[#22D3EE]" />
+                  ) : (
+                    <div className="text-xs font-mono text-amber-400">CPU Utilization: Calculating delta...</div>
+                  )}
+                  {latest.memoryPercent != null && (
+                    <MetricBar label="Memory Utilization" value={latest.memoryPercent} color="bg-[#7C3AED]" />
+                  )}
+                  {latest.diskPercent != null && (
+                    <MetricBar label="Disk Utilization" value={latest.diskPercent} color="bg-[#34D399]" />
+                  )}
+                </div>
+
+                <div className="pt-3 border-t border-dark-800 space-y-2 text-xs font-mono">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Hostname:</span>
+                    <span className="text-slate-200">{latest.hostName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">RAM Available:</span>
+                    <span className="text-slate-200">{formatBytes(latest.memoryAvailableBytes)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Disk Free:</span>
+                    <span className="text-slate-200">{formatBytes(latest.diskFreeBytes)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Last Sample:</span>
+                    <span className="text-slate-300">
+                      {new Date(latest.collectedAt).toLocaleTimeString()}
+                    </span>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="p-6 text-center text-xs font-mono text-slate-500 border border-dashed border-dark-700 rounded-lg">
+                Awaiting first telemetry sample. Click "Collect Now" to sample immediately.
               </div>
-            ) : servers.length === 0 ? (
-              <div className="p-8 text-center text-slate-500 text-xs font-mono">
-                No infrastructure targets registered.
-                <br />
-                <span className="text-slate-600">Add servers via the Infrastructure page.</span>
+            )}
+
+            {/* Network Card */}
+            <div className="pt-3 border-t border-dark-800 space-y-2">
+              <div className="text-xs font-semibold text-slate-200 flex items-center gap-2">
+                <Wifi className="w-3.5 h-3.5 text-[#22D3EE]" />
+                Network Throughput
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
+                <div className="p-2.5 rounded-lg bg-dark-850 border border-dark-700">
+                  <div className="text-slate-500">RX Rate</div>
+                  <div className="text-[#22D3EE] font-bold mt-0.5">{formatRate(latest?.netRecvRateBps)}</div>
+                  <div className="text-slate-500 mt-0.5">Total: {formatBytes(latest?.netBytesRecv)}</div>
+                </div>
+                <div className="p-2.5 rounded-lg bg-dark-850 border border-dark-700">
+                  <div className="text-slate-500">TX Rate</div>
+                  <div className="text-[#A78BFA] font-bold mt-0.5">{formatRate(latest?.netSentRateBps)}</div>
+                  <div className="text-slate-500 mt-0.5">Total: {formatBytes(latest?.netBytesSent)}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Historical Chart */}
+          <div className="lg:col-span-2 bg-dark-900 border border-dark-700/80 rounded-xl p-5 shadow-lg">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-200">
+                  Historical Resource Utilization ({timeRange})
+                </h2>
+                <p className="text-xs text-slate-500">
+                  {chartData.length} real host samples persisted in database
+                </p>
+              </div>
+              {collectorStatus?.lastSuccessAt && (
+                <span className="text-[11px] font-mono text-[#34D399]">
+                  Last OK: {new Date(collectorStatus.lastSuccessAt).toLocaleTimeString()}
+                </span>
+              )}
+            </div>
+
+            {chartData.length === 0 ? (
+              <div className="h-72 flex items-center justify-center text-xs font-mono text-slate-500 border border-dashed border-dark-800 rounded-lg">
+                No historical samples in this time range yet. Samples are recorded every {collectorStatus?.intervalSeconds ?? 10}s.
               </div>
             ) : (
-              servers.map((s) => {
-                const isSelected = selectedServer?.id === s.id;
-                return (
-                  <div
-                    key={s.id}
-                    onClick={() => setSelectedServer(s)}
-                    className={`p-4 cursor-pointer transition hover:bg-dark-850/70 ${
-                      isSelected ? 'bg-dark-850 border-l-2 border-[#7C3AED]' : ''
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-slate-200 font-mono">{s.hostName}</span>
-                      <span
-                        className={`text-[10px] px-2 py-0.5 rounded-full border font-mono font-bold ${
-                          s.status === 'ONLINE'
-                            ? 'bg-emerald-950/60 text-emerald-400 border-emerald-800'
-                            : s.status === 'DEGRADED'
-                            ? 'bg-amber-950/60 text-amber-400 border-amber-800'
-                            : 'bg-rose-950/60 text-rose-400 border-rose-800'
-                        }`}
-                      >
-                        {s.status}
-                      </span>
-                    </div>
-                    <div className="text-xs text-slate-500 font-mono">{s.ipAddress} · {s.osType}</div>
-                    <div className="mt-2 grid grid-cols-3 gap-2 text-[11px] font-mono">
-                      <div>
-                        <span className="text-slate-500">CPU</span>
-                        <div className="text-slate-200 font-bold">{s.cpuUsage.toFixed(1)}%</div>
-                      </div>
-                      <div>
-                        <span className="text-slate-500">MEM</span>
-                        <div className="text-slate-200 font-bold">{s.memoryUsage.toFixed(1)}%</div>
-                      </div>
-                      <div>
-                        <span className="text-slate-500">DISK</span>
-                        <div className="text-slate-200 font-bold">{s.diskUsage.toFixed(1)}%</div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={chartData} margin={{ top: 8, right: 12, bottom: 0, left: -16 }}>
+                  <defs>
+                    <linearGradient id="cpuGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#22D3EE" stopOpacity={0.35} />
+                      <stop offset="95%" stopColor="#22D3EE" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="memGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#7C3AED" stopOpacity={0.35} />
+                      <stop offset="95%" stopColor="#7C3AED" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="diskGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#34D399" stopOpacity={0.25} />
+                      <stop offset="95%" stopColor="#34D399" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#26324A" />
+                  <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#94A3B8', fontFamily: 'monospace' }} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: '#94A3B8' }} tickFormatter={(v) => `${v}%`} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend wrapperStyle={{ fontSize: 11, color: '#94A3B8' }} />
+                  <Area type="monotone" dataKey="cpu" stroke="#22D3EE" fill="url(#cpuGrad)" strokeWidth={1.75} dot={false} name="CPU" connectNulls />
+                  <Area type="monotone" dataKey="memory" stroke="#7C3AED" fill="url(#memGrad)" strokeWidth={1.75} dot={false} name="Memory" connectNulls />
+                  <Area type="monotone" dataKey="disk" stroke="#34D399" fill="url(#diskGrad)" strokeWidth={1.5} dot={false} name="Disk" connectNulls />
+                </AreaChart>
+              </ResponsiveContainer>
             )}
           </div>
         </div>
-
-        {/* Detail panel */}
-        <div className="lg:col-span-2 space-y-5">
-          {target ? (
-            <>
-              <div className="bg-dark-900 border border-dark-700/80 rounded-xl p-5 shadow-lg">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 className="text-sm font-semibold text-slate-200 font-mono">{target.hostName}</h2>
-                    <p className="text-xs text-slate-500 mt-0.5">{target.ipAddress} · {target.osType} · Agent v{target.agentVersion}</p>
-                  </div>
-                  <span className="text-xs text-slate-500 font-mono">
-                    Last seen: {target.lastSeen ? new Date(target.lastSeen).toLocaleTimeString() : 'N/A'}
-                  </span>
-                </div>
-                <div className="space-y-4">
-                  <MetricBar label="CPU Utilization" value={target.cpuUsage} />
-                  <MetricBar label="Memory Utilization" value={target.memoryUsage} color="bg-indigo-500" />
-                  <MetricBar label="Disk Usage" value={target.diskUsage} color="bg-emerald-500" />
-                </div>
-              </div>
-
-              {/* Chart */}
-              <div className="bg-dark-900 border border-dark-700/80 rounded-xl p-5 shadow-lg">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-sm font-semibold text-slate-200">Resource History</h2>
-                  <span className="text-[10px] font-mono text-amber-400 bg-amber-950/40 border border-amber-800/40 px-2 py-0.5 rounded">
-                    DEMO — Live collection requires Phase 2
-                  </span>
-                </div>
-                <ResponsiveContainer width="100%" height={220}>
-                  <AreaChart data={DEMO_HISTORY} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
-                    <defs>
-                      <linearGradient id="cpuGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#7C3AED" stopOpacity={0.35} />
-                        <stop offset="95%" stopColor="#7C3AED" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="memGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#22D3EE" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#22D3EE" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="diskGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#34D399" stopOpacity={0.25} />
-                        <stop offset="95%" stopColor="#34D399" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#26324A" />
-                    <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#94A3B8', fontFamily: 'monospace' }} />
-                    <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: '#94A3B8' }} tickFormatter={(v) => `${v}%`} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend wrapperStyle={{ fontSize: 11, color: '#94A3B8' }} />
-                    <Area type="monotone" dataKey="cpu" stroke="#7C3AED" fill="url(#cpuGrad)" strokeWidth={1.5} dot={false} name="CPU" />
-                    <Area type="monotone" dataKey="memory" stroke="#22D3EE" fill="url(#memGrad)" strokeWidth={1.5} dot={false} name="Memory" />
-                    <Area type="monotone" dataKey="disk" stroke="#34D399" fill="url(#diskGrad)" strokeWidth={1.5} dot={false} name="Disk" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </>
-          ) : (
-            <div className="bg-dark-900 border border-dark-700/80 rounded-xl p-12 text-center shadow-lg">
-              <Server className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-              <p className="text-sm text-slate-400">No infrastructure targets found.</p>
-              <p className="text-xs text-slate-600 mt-1">Register a server via the Infrastructure page to begin monitoring.</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Network I/O placeholder */}
-      <div className="bg-dark-900 border border-dark-700/80 rounded-xl p-5 shadow-lg">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-            <Wifi className="w-4 h-4 text-cyan-400" />
-            Network I/O
-          </h2>
-          <span className="text-[10px] font-mono text-amber-400 bg-amber-950/40 border border-amber-800/40 px-2 py-0.5 rounded">
-            AWAITING PHASE 2
-          </span>
-        </div>
-        <div className="flex items-center justify-center h-24 text-slate-600 text-xs font-mono border border-dashed border-dark-700 rounded-lg">
-          Network metrics will appear here once Phase 2 monitoring pipeline is active.
-        </div>
-      </div>
+      )}
     </div>
   );
 };

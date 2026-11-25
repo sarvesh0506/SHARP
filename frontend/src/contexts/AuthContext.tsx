@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User, AuthResponse } from '../types';
 import apiClient from '../api/client';
 
@@ -19,23 +19,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const savedToken = localStorage.getItem('sharp_jwt_token');
-    const savedUser = localStorage.getItem('sharp_user');
-
-    if (savedToken && savedUser) {
-      try {
-        setToken(savedToken);
-        setUser(JSON.parse(savedUser));
-      } catch (e) {
-        localStorage.removeItem('sharp_jwt_token');
-        localStorage.removeItem('sharp_user');
-      }
-    }
-    setLoading(false);
+  const logout = useCallback(() => {
+    setToken(null);
+    setUser(null);
+    localStorage.removeItem('sharp_jwt_token');
+    localStorage.removeItem('sharp_user');
   }, []);
 
-  const login = (authData: AuthResponse) => {
+  useEffect(() => {
+    let isMounted = true;
+    const savedToken = localStorage.getItem('sharp_jwt_token');
+
+    if (!savedToken) {
+      setLoading(false);
+      return;
+    }
+
+    setToken(savedToken);
+
+    const validateSession = async () => {
+      try {
+        const res = await apiClient.get('/auth/me');
+        if (!isMounted) return;
+        const me = res.data?.data;
+        if (me && me.username) {
+          const verifiedUser: User = {
+            id: me.id,
+            username: me.username,
+            email: me.email,
+            role: me.role as 'ROLE_ADMIN' | 'ROLE_OPERATOR',
+          };
+          setUser(verifiedUser);
+          localStorage.setItem('sharp_user', JSON.stringify(verifiedUser));
+        } else {
+          logout();
+        }
+      } catch (err: any) {
+        if (!isMounted) return;
+        // Clear stale session if token is invalid/expired or unauthorized
+        if (err?.response?.status === 401 || err?.response?.status === 403 || !err?.response) {
+          logout();
+        }
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    validateSession();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [logout]);
+
+  const login = useCallback((authData: AuthResponse) => {
     const userData: User = {
       id: authData.id,
       username: authData.username,
@@ -46,14 +83,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(userData);
     localStorage.setItem('sharp_jwt_token', authData.token);
     localStorage.setItem('sharp_user', JSON.stringify(userData));
-  };
-
-  const logout = () => {
-    setToken(null);
-    setUser(null);
-    localStorage.removeItem('sharp_jwt_token');
-    localStorage.removeItem('sharp_user');
-  };
+  }, []);
 
   const isAuthenticated = !!token && !!user;
   const isAdmin = user?.role === 'ROLE_ADMIN';

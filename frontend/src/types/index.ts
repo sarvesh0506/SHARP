@@ -116,52 +116,92 @@ export interface AgentStatus {
   status: 'ACTIVE' | 'IDLE' | 'LEARNING';
 }
 
-// Phase 2 types — awaiting backend implementation
+// Phase 4B Real Telemetry & Config types
 export interface SystemMetric {
   id: number;
+  hostName: string;
+  osName?: string;
+  uptimeSeconds?: number;
+  cpuPercent: number | null;
+  memoryTotalBytes: number | null;
+  memoryUsedBytes: number | null;
+  memoryAvailableBytes: number | null;
+  memoryPercent: number | null;
+  diskTotalBytes: number | null;
+  diskUsedBytes: number | null;
+  diskFreeBytes: number | null;
+  diskPercent: number | null;
+  netBytesRecv: number | null;
+  netBytesSent: number | null;
+  netRecvRateBps: number | null;
+  netSentRateBps: number | null;
   collectedAt: string;
-  cpuPercent: number;
-  memoryPercent: number;
-  diskPercent: number;
-  netBytesIn?: number;
-  netBytesOut?: number;
-  jvmHeapUsedMb?: number;
-  jvmHeapMaxMb?: number;
 }
 
 export interface ProcessMetric {
+  id?: number;
   pid: number;
   processName: string;
-  cpuPercent: number;
-  memoryKb: number;
+  cpuPercent: number | null;
+  memoryBytes: number | null;
+  memoryPercent: number | null;
   status: string;
+  startTime?: string | null;
+  executablePath?: string | null;
+  userName?: string | null;
   collectedAt: string;
+}
+
+export interface ProcessPageResponse {
+  available: boolean;
+  collectedAt: string | null;
+  items: ProcessMetric[];
+  totalElements: number;
+  totalPages: number;
+  page: number;
+  size: number;
+  totalHostProcessesSampled?: number;
 }
 
 export interface ContainerMetric {
-  id: number;
-  applicationId?: number;
+  id?: number;
   containerId: string;
   containerName: string;
-  cpuPercent: number;
-  memoryPercent: number;
-  memoryUsageMb: number;
-  netIoRxBytes?: number;
-  netIoTxBytes?: number;
-  state: string;
-  restartCount: number;
+  image: string;
+  status: string;
+  healthStatus?: string;
+  cpuPercent: number | null;
+  memoryUsageBytes?: number | null;
+  memoryLimitBytes?: number | null;
+  memoryPercent: number | null;
+  netIo?: string | null;
+  restartCount?: number;
+  uptimeText?: string;
   collectedAt: string;
 }
 
-export interface AnomalyDetection {
-  id: number;
-  isAnomaly: boolean;
-  confidence: number;
-  anomalyType: string;
-  severity: string;
-  applicationId?: number;
-  incidentId?: number;
-  detectedAt: string;
+export interface DockerSnapshotResponse {
+  available: boolean;
+  statusMessage: string;
+  dockerVersion?: string | null;
+  containers: ContainerMetric[];
+  checkedAt?: string;
+}
+
+export interface CollectorStatus {
+  status: 'HEALTHY' | 'DEGRADED' | 'DISABLED' | 'INITIALIZING';
+  enabled: boolean;
+  intervalSeconds: number;
+  retentionHours: number;
+  totalCollections: number;
+  lastAttemptAt?: string | null;
+  lastSuccessAt?: string | null;
+  lastFailureAt?: string | null;
+  lastError?: string | null;
+  hostDataAvailable: boolean;
+  processDataAvailable: boolean;
+  dockerAvailable: boolean;
+  dockerStatusMessage?: string;
 }
 
 export interface SystemConfig {

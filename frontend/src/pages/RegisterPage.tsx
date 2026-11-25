@@ -10,7 +10,6 @@ export const RegisterPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState<'ROLE_OPERATOR' | 'ROLE_ADMIN'>('ROLE_OPERATOR');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -23,7 +22,12 @@ export const RegisterPage: React.FC = () => {
     setLoading(true);
 
     try {
-      const res = await apiClient.post('/auth/register', { username, email, password, role });
+      const res = await apiClient.post('/auth/register', {
+        username,
+        email,
+        password,
+        role: 'ROLE_OPERATOR',
+      });
       if (res.data && res.data.data) {
         login(res.data.data);
         navigate('/');
@@ -157,19 +161,14 @@ export const RegisterPage: React.FC = () => {
               </div>
             </div>
 
-            <div>
-              <label htmlFor="reg-role" className="block text-white font-medium mb-1.5">
-                Role Authorization
-              </label>
-              <select
-                id="reg-role"
-                value={role}
-                onChange={(e) => setRole(e.target.value as 'ROLE_OPERATOR' | 'ROLE_ADMIN')}
-                className="w-full bg-[#05070A] border border-[#1E293B] rounded-lg px-3 py-2.5 text-white focus:outline-none focus:border-[#00D9FF] transition-colors font-mono"
-              >
-                <option value="ROLE_OPERATOR">OPERATOR (Standard Monitoring & Recovery)</option>
-                <option value="ROLE_ADMIN">ADMIN (Full Permissions & Approvals)</option>
-              </select>
+            <div className="p-3 rounded-lg bg-[#05070A] border border-[#1E293B] space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[#94A3B8] font-medium">Assigned Role</span>
+                <span className="font-mono text-[#00D9FF] font-semibold">ROLE_OPERATOR</span>
+              </div>
+              <p className="text-[11px] text-[#64748B]">
+                Public registration provisions Operator access. Administrator privileges require authorization by an existing admin.
+              </p>
             </div>
 
             <button
