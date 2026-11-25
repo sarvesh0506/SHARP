@@ -24,6 +24,12 @@ public class IncidentDto {
     private String rootCause;
     private String detectedByAgent;
     private String evidence;
+    private String source;
+    private String affectedResource;
+    private Long anomalyId;
+    private String rcaStatus;
+    private String recoveryStatus;
     private Instant openedAt;
+    private Instant updatedAt;
     private Instant resolvedAt;
 }

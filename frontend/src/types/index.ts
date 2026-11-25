@@ -62,11 +62,17 @@ export interface Incident {
   serverId?: number;
   serverHostName?: string;
   severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-  status: 'OPEN' | 'DIAGNOSING' | 'RECOVERING' | 'RESOLVED' | 'FAILED';
+  status: string;
   rootCause?: string;
   detectedByAgent: string;
   evidence?: string;
+  source?: string;
+  affectedResource?: string;
+  anomalyId?: number;
+  rcaStatus?: string;
+  recoveryStatus?: string;
   openedAt: string;
+  updatedAt?: string;
   resolvedAt?: string;
 }
 
@@ -75,15 +81,76 @@ export interface RecoveryAction {
   incidentId: number;
   incidentTitle?: string;
   actionType: string;
-  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
-  status: 'PENDING' | 'AWAITING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'EXECUTING' | 'SUCCESS' | 'FAILED';
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  status: string;
   requiresApproval: boolean;
   approvedBy?: string;
   approvalTimestamp?: string;
   executionDetails?: string;
-  verificationStatus: 'UNVERIFIED' | 'VERIFYING' | 'VERIFIED_SUCCESS' | 'VERIFIED_FAILURE';
+  verificationStatus: string;
+  recommendationId?: number;
+  targetResource?: string;
+  initiatedBy?: string;
+  verificationEvidence?: string;
+  failureReason?: string;
   initiatedAt: string;
   completedAt?: string;
+}
+
+export interface AnomalyEvent {
+  id: number;
+  resourceType: string;
+  resourceName: string;
+  metricName: string;
+  observedValue: number;
+  baselineValue?: number | null;
+  detectionMethod: 'RULE_BASED' | 'STATISTICAL' | 'AI_ANALYSIS' | string;
+  severity: 'INFO' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  anomalyScore?: number | null;
+  confidenceScore?: number | null;
+  status: 'ACTIVE' | 'ACKNOWLEDGED' | 'RESOLVED' | 'SUPPRESSED';
+  description: string;
+  evidence?: string;
+  recommendedStep?: string;
+  systemMetricId?: number | null;
+  incidentId?: number | null;
+  detectedAt: string;
+  updatedAt: string;
+}
+
+export interface RootCauseAnalysis {
+  id: number;
+  incidentId: number;
+  anomalyId?: number | null;
+  analysisMethod: 'AI_ANALYSIS' | 'DETERMINISTIC_FALLBACK' | string;
+  status: string;
+  hypothesis: string;
+  supportingEvidence?: string;
+  contributingFactors?: string;
+  affectedComponents?: string;
+  recommendedInvestigation?: string;
+  recommendedActionType?: string;
+  confidenceScore?: number | null;
+  analyzedBy?: string;
+  createdAt: string;
+}
+
+export interface RecoveryRecommendation {
+  id: number;
+  incidentId: number;
+  actionType: string;
+  actionName: string;
+  description?: string;
+  targetResource?: string;
+  reason?: string;
+  evidence?: string;
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  expectedResult?: string;
+  estimatedImpact?: string;
+  approvalRequired: boolean;
+  policyRule?: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXECUTED' | 'CANCELLED';
+  createdAt: string;
 }
 
 export interface DashboardSummary {

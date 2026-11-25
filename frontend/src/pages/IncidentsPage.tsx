@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/client';
 import { Incident, RecoveryAction } from '../types';
 import { StatusBadge } from '../components/ui/StatusBadge';
@@ -10,9 +11,12 @@ import {
   CheckCircle,
   XCircle,
   RefreshCw,
+  Search,
+  Stethoscope,
 } from 'lucide-react';
 
 export const IncidentsPage: React.FC = () => {
+  const navigate = useNavigate();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [recoveryActions, setRecoveryActions] = useState<RecoveryAction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,7 +25,10 @@ export const IncidentsPage: React.FC = () => {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
 
-  // Inline action forms (replacing native alert/prompt)
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [severityFilter, setSeverityFilter] = useState('ALL');
+
   const [rejectingActionId, setRejectingActionId] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [resolvingIncidentId, setResolvingIncidentId] = useState<number | null>(null);
@@ -42,12 +49,11 @@ export const IncidentsPage: React.FC = () => {
       setIncidents(incList);
       setRecoveryActions(recList);
       setSelectedIncident((prev) =>
-        prev ? incList.find((i) => i.id === prev.id) ?? incList[0] ?? null : prev
+        prev ? incList.find((i) => i.id === prev.id) ?? incList[0] ?? null : incList[0] ?? null
       );
       setError(null);
     } catch (err: any) {
-      console.error('Failed to load incidents/recovery data:', err);
-      setError(err?.response?.data?.message || 'Unable to load incidents and recovery actions from SHARP backend.');
+      setError(err?.response?.data?.message || 'Unable to load incidents from SHARP backend.');
     } finally {
       setLoading(false);
       setIsRefreshing(false);
@@ -58,16 +64,43 @@ export const IncidentsPage: React.FC = () => {
     fetchData();
   }, []);
 
+  const filteredIncidents = useMemo(() => {
+    return incidents.filter((inc) => {
+      if (statusFilter !== 'ALL' && inc.status !== statusFilter) return false;
+      if (severityFilter !== 'ALL' && inc.severity !== severityFilter) return false;
+      if (search.trim()) {
+        const q = search.toLowerCase();
+        const hay = `${inc.id} ${inc.title} ${inc.description} ${inc.affectedResource ?? ''} ${inc.detectedByAgent}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [incidents, statusFilter, severityFilter, search]);
+
+  const handleIncidentTransition = async (id: number, endpoint: 'acknowledge' | 'investigate' | 'reopen') => {
+    try {
+      setActionLoading(true);
+      setError(null);
+      setFeedback(null);
+      await apiClient.post(`/incidents/${id}/${endpoint}`);
+      setFeedback(`Incident #${id} updated (${endpoint}).`);
+      await fetchData();
+    } catch (err: any) {
+      setError(err?.response?.data?.message || `Failed to ${endpoint} incident.`);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleApprove = async (actionId: number) => {
     try {
       setActionLoading(true);
       setError(null);
       setFeedback(null);
       await apiClient.post(`/recovery/${actionId}/approve`);
-      setFeedback(`Recovery action #${actionId} approved by administrator.`);
+      setFeedback(`Recovery action #${actionId} approved and verified.`);
       await fetchData();
     } catch (err: any) {
-      console.error('Failed to approve recovery:', err);
       setError(err?.response?.data?.message || 'Approval failed. Administrator permissions required.');
     } finally {
       setActionLoading(false);
@@ -82,14 +115,12 @@ export const IncidentsPage: React.FC = () => {
     try {
       setActionLoading(true);
       setError(null);
-      setFeedback(null);
       await apiClient.post(`/recovery/${actionId}/reject`, { reason: rejectReason.trim() });
       setRejectingActionId(null);
       setRejectReason('');
       setFeedback(`Recovery action #${actionId} rejected.`);
       await fetchData();
     } catch (err: any) {
-      console.error('Failed to reject recovery:', err);
       setError(err?.response?.data?.message || 'Rejection failed.');
     } finally {
       setActionLoading(false);
@@ -101,14 +132,12 @@ export const IncidentsPage: React.FC = () => {
     try {
       setActionLoading(true);
       setError(null);
-      setFeedback(null);
       await apiClient.post(`/incidents/${incidentId}/resolve`, { resolutionNotes: notes });
       setResolvingIncidentId(null);
       setResolutionNotes('');
       setFeedback(`Incident #${incidentId} marked as resolved.`);
       await fetchData();
     } catch (err: any) {
-      console.error('Failed to resolve incident:', err);
       setError(err?.response?.data?.message || 'Failed to resolve incident.');
     } finally {
       setActionLoading(false);
@@ -120,10 +149,10 @@ export const IncidentsPage: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-dark-800">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-100 font-mono">
-            Incident Management & Recovery Engine
+            Incident Management
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Autonomous failure detection, root cause diagnostics, approval workflows, and audit logging.
+            Full incident lifecycle tracking, triage transitions, root cause status, and linked recovery actions.
           </p>
         </div>
         <button
@@ -144,90 +173,120 @@ export const IncidentsPage: React.FC = () => {
         </div>
       )}
 
+      {/* Search & Filters */}
+      <div className="flex flex-wrap gap-3 items-center">
+        <div className="relative flex-1 min-w-[220px] max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search incident ID, title, resource..."
+            className="w-full pl-8 pr-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-xs text-slate-200 font-mono focus:outline-none focus:border-[#7C3AED]"
+          />
+        </div>
+        <select
+          value={severityFilter}
+          onChange={(e) => setSeverityFilter(e.target.value)}
+          className="px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-xs text-slate-200 font-mono"
+        >
+          <option value="ALL">All Severities</option>
+          <option value="CRITICAL">CRITICAL</option>
+          <option value="HIGH">HIGH</option>
+          <option value="MEDIUM">MEDIUM</option>
+          <option value="LOW">LOW</option>
+        </select>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-xs text-slate-200 font-mono"
+        >
+          <option value="ALL">All Statuses</option>
+          <option value="OPEN">OPEN</option>
+          <option value="ACKNOWLEDGED">ACKNOWLEDGED</option>
+          <option value="INVESTIGATING">INVESTIGATING</option>
+          <option value="RECOVERY_PENDING">RECOVERY_PENDING</option>
+          <option value="RECOVERING">RECOVERING</option>
+          <option value="RESOLVED">RESOLVED</option>
+          <option value="REOPENED">REOPENED</option>
+          <option value="FAILED">FAILED</option>
+        </select>
+        <span className="text-xs font-mono text-slate-500 ml-auto">
+          Showing {filteredIncidents.length} of {incidents.length}
+        </span>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Incident List */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="bg-dark-900 border border-dark-700/80 rounded-xl overflow-hidden shadow-lg">
-            <div className="p-4 bg-dark-850 border-b border-dark-700 flex items-center justify-between text-xs font-mono">
-              <span className="text-slate-300 font-semibold uppercase">Incident Stream</span>
-              <span className="text-slate-500">Total: {incidents.length}</span>
-            </div>
-
-            <div className="divide-y divide-dark-800">
-              {loading ? (
-                <div className="p-8 text-center text-slate-500 font-mono text-xs">
-                  <RefreshCw className="w-4 h-4 animate-spin inline mr-2 text-[#7C3AED]" />
-                  Loading incident ledger...
-                </div>
-              ) : incidents.length === 0 ? (
-                <div className="p-8 text-center text-slate-500 font-mono text-xs">
-                  {error
-                    ? 'Unable to display incidents due to backend connection error.'
-                    : 'No active or recorded incidents. Systems are resilient and healthy.'}
-                </div>
-              ) : (
-                incidents.map((incident) => {
-                  const action = recoveryActions.find((a) => a.incidentId === incident.id);
-                  return (
-                    <div
-                      key={incident.id}
-                      onClick={() => {
-                        setSelectedIncident(incident);
-                        setRejectingActionId(null);
-                        setResolvingIncidentId(null);
-                      }}
-                      className={`p-4 hover:bg-dark-850/70 transition cursor-pointer ${
-                        selectedIncident?.id === incident.id ? 'bg-dark-850 border-l-2 border-[#7C3AED]' : ''
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <AlertTriangle
-                              className={`w-4 h-4 ${
-                                incident.severity === 'CRITICAL' ? 'text-rose-400' : 'text-amber-400'
-                              }`}
-                            />
-                            <span className="font-semibold text-slate-200 text-sm">{incident.title}</span>
-                          </div>
-                          <p className="text-xs text-slate-400 line-clamp-2">{incident.description}</p>
-                        </div>
-                        <StatusBadge status={incident.status} />
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-3 mt-3 text-[11px] font-mono text-slate-500">
-                        <span
-                          className={`px-2 py-0.5 rounded font-semibold ${
-                            incident.severity === 'CRITICAL'
-                              ? 'bg-rose-950 text-rose-400 border border-rose-800'
-                              : 'bg-amber-950 text-amber-400 border border-amber-800'
-                          }`}
-                        >
-                          {incident.severity}
-                        </span>
-                        <span>Agent: {incident.detectedByAgent}</span>
-                        <span>·</span>
-                        <span>{new Date(incident.openedAt).toLocaleString()}</span>
-                        {action && (
-                          <span className="ml-auto text-cyan-400 font-semibold">
-                            Recovery: {action.actionType} ({action.status})
+        <div className="lg:col-span-2 bg-dark-900 border border-dark-700/80 rounded-xl overflow-hidden shadow-lg">
+          <div className="divide-y divide-dark-800">
+            {loading ? (
+              <div className="p-8 text-center text-slate-500 font-mono text-xs">
+                <RefreshCw className="w-4 h-4 animate-spin inline mr-2 text-[#7C3AED]" />
+                Loading incident ledger...
+              </div>
+            ) : filteredIncidents.length === 0 ? (
+              <div className="p-8 text-center text-slate-500 font-mono text-xs">
+                No matching incidents found.
+              </div>
+            ) : (
+              filteredIncidents.map((incident) => {
+                const action = recoveryActions.find((a) => a.incidentId === incident.id);
+                return (
+                  <div
+                    key={incident.id}
+                    onClick={() => {
+                      setSelectedIncident(incident);
+                      setRejectingActionId(null);
+                      setResolvingIncidentId(null);
+                    }}
+                    className={`p-4 hover:bg-dark-850/70 transition cursor-pointer ${
+                      selectedIncident?.id === incident.id ? 'bg-dark-850 border-l-2 border-[#7C3AED]' : ''
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle
+                            className={`w-4 h-4 ${
+                              incident.severity === 'CRITICAL' ? 'text-rose-400' : 'text-amber-400'
+                            }`}
+                          />
+                          <span className="font-semibold text-slate-200 text-sm">
+                            #{incident.id} · {incident.title}
                           </span>
-                        )}
+                        </div>
+                        <p className="text-xs text-slate-400 line-clamp-2">{incident.description}</p>
                       </div>
+                      <StatusBadge status={incident.status} />
                     </div>
-                  );
-                })
-              )}
-            </div>
+
+                    <div className="flex flex-wrap items-center gap-3 mt-3 text-[11px] font-mono text-slate-500">
+                      <span className={incident.severity === 'CRITICAL' ? 'text-rose-400' : 'text-amber-400'}>
+                        {incident.severity}
+                      </span>
+                      <span>Source: {incident.source || 'MANUAL'}</span>
+                      <span>RCA: {incident.rcaStatus || 'PENDING'}</span>
+                      <span>{new Date(incident.openedAt).toLocaleString()}</span>
+                      {action && (
+                        <span className="ml-auto text-cyan-400 font-semibold">
+                          Recovery: {action.actionType} ({action.status})
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
 
-        {/* Selected Incident & Recovery Side Panel */}
+        {/* Detail Panel */}
         <div className="bg-dark-900 border border-dark-700/80 rounded-xl p-5 shadow-lg space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-dark-800">
             <h2 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
               <RotateCcw className="w-4 h-4 text-cyan-400" />
-              Recovery & Diagnosis Panel
+              Incident Lifecycle & Actions
             </h2>
           </div>
 
@@ -235,111 +294,101 @@ export const IncidentsPage: React.FC = () => {
             <div className="space-y-4 text-xs">
               <div>
                 <span className="text-[11px] font-mono text-slate-500 uppercase block mb-1">
-                  Incident # {selectedIncident.id}
+                  Incident #{selectedIncident.id} · {selectedIncident.affectedResource || 'Host'}
                 </span>
                 <h3 className="text-base font-bold text-slate-100">{selectedIncident.title}</h3>
-                <p className="text-slate-400 mt-1">{selectedIncident.description}</p>
+                <p className="text-slate-400 mt-1 whitespace-pre-wrap">{selectedIncident.description}</p>
+              </div>
+
+              {/* Lifecycle Buttons */}
+              <div className="flex flex-wrap gap-2">
+                {selectedIncident.status === 'OPEN' && (
+                  <button
+                    disabled={actionLoading}
+                    onClick={() => handleIncidentTransition(selectedIncident.id, 'acknowledge')}
+                    className="px-2.5 py-1.5 rounded bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-medium"
+                  >
+                    Acknowledge
+                  </button>
+                )}
+                {['OPEN', 'ACKNOWLEDGED', 'REOPENED'].includes(selectedIncident.status) && (
+                  <button
+                    disabled={actionLoading}
+                    onClick={() => handleIncidentTransition(selectedIncident.id, 'investigate')}
+                    className="px-2.5 py-1.5 rounded bg-dark-800 hover:bg-dark-700 border border-dark-600 text-slate-200"
+                  >
+                    Investigate
+                  </button>
+                )}
+                {['RESOLVED', 'CLOSED'].includes(selectedIncident.status) && (
+                  <button
+                    disabled={actionLoading}
+                    onClick={() => handleIncidentTransition(selectedIncident.id, 'reopen')}
+                    className="px-2.5 py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-white font-medium"
+                  >
+                    Reopen
+                  </button>
+                )}
+                <button
+                  onClick={() => navigate(`/diagnosis?incidentId=${selectedIncident.id}`)}
+                  className="px-2.5 py-1.5 rounded bg-dark-850 border border-[#7C3AED]/40 text-[#A78BFA] flex items-center gap-1"
+                >
+                  <Stethoscope className="w-3.5 h-3.5" /> RCA
+                </button>
               </div>
 
               {selectedIncident.rootCause && (
                 <div className="p-3 rounded-lg bg-dark-850 border border-dark-700/80 space-y-1">
-                  <span className="text-[11px] font-semibold text-cyan-400 font-mono block">
-                    AI Root Cause Diagnosis
-                  </span>
+                  <span className="text-[11px] font-semibold text-cyan-400 font-mono block">Root Cause</span>
                   <p className="text-slate-300 leading-relaxed">{selectedIncident.rootCause}</p>
                 </div>
               )}
 
-              {selectedIncident.evidence && (
-                <div>
-                  <span className="text-[11px] font-mono text-slate-500 block mb-1">
-                    Evidence & Telemetry Snapshot
-                  </span>
-                  <pre className="p-2.5 rounded bg-dark-950 border border-dark-800 text-[11px] font-mono text-slate-400 overflow-x-auto">
-                    {selectedIncident.evidence}
-                  </pre>
-                </div>
-              )}
-
-              {/* Recovery Action Card for this incident */}
               {(() => {
                 const action = recoveryActions.find((a) => a.incidentId === selectedIncident.id);
-                if (!action) {
-                  return (
-                    <div className="p-3 rounded-lg bg-dark-850 text-slate-400 text-center font-mono text-[11px]">
-                      No active recovery action attached.
-                    </div>
-                  );
-                }
-
+                if (!action) return null;
                 return (
-                  <div className="p-3.5 rounded-lg bg-dark-850 border border-dark-700 space-y-2.5">
+                  <div className="p-3.5 rounded-lg bg-dark-850 border border-dark-700 space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-slate-200 font-mono">Action: {action.actionType}</span>
+                      <span className="font-semibold text-slate-200 font-mono">{action.actionType}</span>
                       <StatusBadge status={action.status} />
                     </div>
-                    <div className="text-[11px] text-slate-400 font-mono space-y-1">
-                      <div>
-                        Risk Level:{' '}
-                        <span className={action.riskLevel === 'HIGH' ? 'text-rose-400' : 'text-[#A78BFA]'}>
-                          {action.riskLevel}
-                        </span>
-                      </div>
-                      <div>Requires Admin Approval: {action.requiresApproval ? 'YES' : 'NO'}</div>
-                      <div>
-                        Verification: <span className="text-emerald-400">{action.verificationStatus}</span>
-                      </div>
+                    <div className="text-[11px] text-slate-400 font-mono">
+                      Verification: <span className="text-emerald-400">{action.verificationStatus}</span>
                     </div>
-
-                    {/* Admin Approval Buttons */}
                     {action.status === 'AWAITING_APPROVAL' && isAdmin && (
                       <div className="pt-2 space-y-2">
                         <div className="flex gap-2">
                           <button
                             disabled={actionLoading}
                             onClick={() => handleApprove(action.id)}
-                            className="flex-1 py-1.5 px-3 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-medium flex items-center justify-center gap-1.5 transition disabled:opacity-50"
+                            className="flex-1 py-1.5 px-3 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-medium flex items-center justify-center gap-1"
                           >
-                            <CheckCircle className="w-3.5 h-3.5" /> Approve Action
+                            <CheckCircle className="w-3.5 h-3.5" /> Approve
                           </button>
                           <button
                             disabled={actionLoading}
                             onClick={() => setRejectingActionId(action.id)}
-                            className="flex-1 py-1.5 px-3 rounded bg-rose-600 hover:bg-rose-500 text-white font-medium flex items-center justify-center gap-1.5 transition disabled:opacity-50"
+                            className="flex-1 py-1.5 px-3 rounded bg-rose-600 hover:bg-rose-500 text-white font-medium flex items-center justify-center gap-1"
                           >
                             <XCircle className="w-3.5 h-3.5" /> Reject
                           </button>
                         </div>
-
                         {rejectingActionId === action.id && (
-                          <div className="space-y-2 pt-1">
+                          <div className="space-y-2">
                             <input
                               type="text"
                               value={rejectReason}
                               onChange={(e) => setRejectReason(e.target.value)}
-                              placeholder="Enter rejection reason..."
-                              className="w-full px-3 py-1.5 rounded bg-dark-950 border border-dark-700 text-slate-200 focus:outline-none focus:border-rose-500"
+                              placeholder="Rejection reason..."
+                              className="w-full px-3 py-1.5 rounded bg-dark-950 border border-dark-700 text-slate-200"
                             />
-                            <div className="flex gap-2 justify-end">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setRejectingActionId(null);
-                                  setRejectReason('');
-                                }}
-                                className="px-2.5 py-1 rounded bg-dark-800 text-slate-300"
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                type="button"
-                                disabled={actionLoading}
-                                onClick={() => handleRejectSubmit(action.id)}
-                                className="px-3 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white font-medium disabled:opacity-50"
-                              >
-                                Confirm Reject
-                              </button>
-                            </div>
+                            <button
+                              onClick={() => handleRejectSubmit(action.id)}
+                              className="px-3 py-1 rounded bg-rose-600 text-white"
+                            >
+                              Confirm Reject
+                            </button>
                           </div>
                         )}
                       </div>
@@ -348,45 +397,30 @@ export const IncidentsPage: React.FC = () => {
                 );
               })()}
 
-              {selectedIncident.status !== 'RESOLVED' && (
+              {!['RESOLVED', 'CLOSED'].includes(selectedIncident.status) && (
                 <div className="space-y-2">
                   {resolvingIncidentId === selectedIncident.id ? (
                     <div className="p-3 rounded-lg bg-dark-850 border border-dark-700 space-y-2">
-                      <label className="block text-[11px] font-mono text-slate-400">
-                        Resolution Notes
-                      </label>
                       <input
                         type="text"
                         value={resolutionNotes}
                         onChange={(e) => setResolutionNotes(e.target.value)}
-                        placeholder="Describe how the incident was resolved..."
-                        className="w-full px-3 py-1.5 rounded bg-dark-950 border border-dark-700 text-slate-200 focus:outline-none focus:border-[#7C3AED]"
+                        placeholder="Resolution notes..."
+                        className="w-full px-3 py-1.5 rounded bg-dark-950 border border-dark-700 text-slate-200"
                       />
                       <div className="flex justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setResolvingIncidentId(null);
-                            setResolutionNotes('');
-                          }}
-                          className="px-2.5 py-1 rounded bg-dark-800 text-slate-300"
-                        >
+                        <button onClick={() => setResolvingIncidentId(null)} className="px-2.5 py-1 rounded bg-dark-800 text-slate-300">
                           Cancel
                         </button>
-                        <button
-                          type="button"
-                          disabled={actionLoading}
-                          onClick={() => handleResolveSubmit(selectedIncident.id)}
-                          className="px-3 py-1 rounded bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-medium disabled:opacity-50"
-                        >
-                          {actionLoading ? 'Resolving...' : 'Confirm Resolve'}
+                        <button onClick={() => handleResolveSubmit(selectedIncident.id)} className="px-3 py-1 rounded bg-[#7C3AED] text-white">
+                          Confirm Resolve
                         </button>
                       </div>
                     </div>
                   ) : (
                     <button
                       onClick={() => setResolvingIncidentId(selectedIncident.id)}
-                      className="w-full py-2 px-3 rounded-lg bg-dark-800 hover:bg-dark-750 border border-dark-700 text-slate-300 font-medium transition"
+                      className="w-full py-2 px-3 rounded-lg bg-dark-800 hover:bg-dark-750 border border-dark-700 text-slate-300 font-medium"
                     >
                       Mark Incident as Resolved
                     </button>
@@ -396,7 +430,7 @@ export const IncidentsPage: React.FC = () => {
             </div>
           ) : (
             <div className="py-12 text-center text-slate-500 font-mono text-xs">
-              Select an incident from the stream to inspect root causes, metrics, and recovery actions.
+              Select an incident to inspect details and lifecycle actions.
             </div>
           )}
         </div>

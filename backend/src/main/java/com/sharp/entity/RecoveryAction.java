@@ -49,7 +49,22 @@ public class RecoveryAction {
 
     @Column(name = "verification_status", length = 30)
     @Builder.Default
-    private String verificationStatus = "UNVERIFIED"; // UNVERIFIED, VERIFYING, VERIFIED_SUCCESS, VERIFIED_FAILURE
+    private String verificationStatus = "UNVERIFIED"; // UNVERIFIED, VERIFYING, VERIFIED, FAILED, PARTIALLY_RECOVERED, VERIFICATION_TIMEOUT
+
+    @Column(name = "recommendation_id")
+    private Long recommendationId;
+
+    @Column(name = "target_resource", length = 150)
+    private String targetResource;
+
+    @Column(name = "initiated_by", length = 60)
+    private String initiatedBy;
+
+    @Column(name = "verification_evidence", columnDefinition = "TEXT")
+    private String verificationEvidence;
+
+    @Column(name = "failure_reason", columnDefinition = "TEXT")
+    private String failureReason;
 
     @CreationTimestamp
     @Column(name = "initiated_at", updatable = false)

@@ -22,20 +22,17 @@ public class IncidentController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<IncidentDto>>> getAllIncidents() {
-        List<IncidentDto> incidents = incidentService.getAllIncidents();
-        return ResponseEntity.ok(ApiResponse.ok(incidents));
+        return ResponseEntity.ok(ApiResponse.ok(incidentService.getAllIncidents()));
     }
 
     @GetMapping("/active")
     public ResponseEntity<ApiResponse<List<IncidentDto>>> getActiveIncidents() {
-        List<IncidentDto> incidents = incidentService.getActiveIncidents();
-        return ResponseEntity.ok(ApiResponse.ok(incidents));
+        return ResponseEntity.ok(ApiResponse.ok(incidentService.getActiveIncidents()));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<IncidentDto>> getIncidentById(@PathVariable Long id) {
-        IncidentDto incident = incidentService.getIncidentById(id);
-        return ResponseEntity.ok(ApiResponse.ok(incident));
+        return ResponseEntity.ok(ApiResponse.ok(incidentService.getIncidentById(id)));
     }
 
     @PostMapping
@@ -43,9 +40,33 @@ public class IncidentController {
             @Valid @RequestBody IncidentDto dto,
             Authentication authentication,
             HttpServletRequest request) {
-        String username = authentication != null ? authentication.getName() : "SENTINEL";
-        IncidentDto created = incidentService.createIncident(dto, username, request.getRemoteAddr());
-        return ResponseEntity.ok(ApiResponse.ok("Incident logged successfully", created));
+        String username = authentication != null ? authentication.getName() : "OPERATOR";
+        return ResponseEntity.ok(ApiResponse.ok("Incident logged successfully",
+                incidentService.createIncident(dto, username, request.getRemoteAddr())));
+    }
+
+    @PostMapping("/{id}/acknowledge")
+    public ResponseEntity<ApiResponse<IncidentDto>> acknowledgeIncident(
+            @PathVariable Long id,
+            @RequestBody(required = false) Map<String, String> body,
+            Authentication authentication,
+            HttpServletRequest request) {
+        String username = authentication != null ? authentication.getName() : "OPERATOR";
+        String notes = body != null ? body.get("notes") : null;
+        return ResponseEntity.ok(ApiResponse.ok("Incident acknowledged",
+                incidentService.transitionStatus(id, "ACKNOWLEDGED", notes, username, request.getRemoteAddr())));
+    }
+
+    @PostMapping("/{id}/investigate")
+    public ResponseEntity<ApiResponse<IncidentDto>> investigateIncident(
+            @PathVariable Long id,
+            @RequestBody(required = false) Map<String, String> body,
+            Authentication authentication,
+            HttpServletRequest request) {
+        String username = authentication != null ? authentication.getName() : "OPERATOR";
+        String notes = body != null ? body.get("notes") : null;
+        return ResponseEntity.ok(ApiResponse.ok("Incident moved to investigating",
+                incidentService.transitionStatus(id, "INVESTIGATING", notes, username, request.getRemoteAddr())));
     }
 
     @PostMapping("/{id}/resolve")
@@ -56,7 +77,31 @@ public class IncidentController {
             HttpServletRequest request) {
         String username = authentication != null ? authentication.getName() : "OPERATOR";
         String notes = body != null ? body.get("resolutionNotes") : "Resolved manually";
-        IncidentDto resolved = incidentService.resolveIncident(id, notes, username, request.getRemoteAddr());
-        return ResponseEntity.ok(ApiResponse.ok("Incident marked as resolved", resolved));
+        return ResponseEntity.ok(ApiResponse.ok("Incident marked as resolved",
+                incidentService.resolveIncident(id, notes, username, request.getRemoteAddr())));
+    }
+
+    @PostMapping("/{id}/reopen")
+    public ResponseEntity<ApiResponse<IncidentDto>> reopenIncident(
+            @PathVariable Long id,
+            @RequestBody(required = false) Map<String, String> body,
+            Authentication authentication,
+            HttpServletRequest request) {
+        String username = authentication != null ? authentication.getName() : "OPERATOR";
+        String notes = body != null ? body.get("notes") : "Reopened for further investigation";
+        return ResponseEntity.ok(ApiResponse.ok("Incident reopened",
+                incidentService.transitionStatus(id, "REOPENED", notes, username, request.getRemoteAddr())));
+    }
+
+    @PostMapping("/{id}/close")
+    public ResponseEntity<ApiResponse<IncidentDto>> closeIncident(
+            @PathVariable Long id,
+            @RequestBody(required = false) Map<String, String> body,
+            Authentication authentication,
+            HttpServletRequest request) {
+        String username = authentication != null ? authentication.getName() : "OPERATOR";
+        String notes = body != null ? body.get("notes") : "Closed";
+        return ResponseEntity.ok(ApiResponse.ok("Incident closed",
+                incidentService.transitionStatus(id, "CLOSED", notes, username, request.getRemoteAddr())));
     }
 }

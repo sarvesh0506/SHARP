@@ -23,6 +23,11 @@ public class RecoveryActionDto {
     private Instant approvalTimestamp;
     private String executionDetails;
     private String verificationStatus;
+    private Long recommendationId;
+    private String targetResource;
+    private String initiatedBy;
+    private String verificationEvidence;
+    private String failureReason;
     private Instant initiatedAt;
     private Instant completedAt;
 }

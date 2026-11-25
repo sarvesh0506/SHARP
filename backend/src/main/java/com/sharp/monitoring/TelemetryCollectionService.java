@@ -1,5 +1,6 @@
 package com.sharp.monitoring;
 
+import com.sharp.detection.AnomalyDetectionEngine;
 import com.sharp.entity.ContainerMetric;
 import com.sharp.entity.ProcessMetric;
 import com.sharp.entity.SystemMetric;
@@ -10,7 +11,7 @@ import com.sharp.service.ConfigurationService;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,7 +27,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Service
-@RequiredArgsConstructor
 public class TelemetryCollectionService {
 
     private static final Logger log = LoggerFactory.getLogger(TelemetryCollectionService.class);
@@ -38,6 +38,26 @@ public class TelemetryCollectionService {
     private final ProcessMetricRepository processMetricRepository;
     private final ContainerMetricRepository containerMetricRepository;
     private final ConfigurationService configurationService;
+    private final AnomalyDetectionEngine anomalyDetectionEngine;
+
+    public TelemetryCollectionService(
+            HostTelemetryCollector hostCollector,
+            WindowsProcessCollector processCollector,
+            DockerMonitorService dockerMonitorService,
+            SystemMetricRepository systemMetricRepository,
+            ProcessMetricRepository processMetricRepository,
+            ContainerMetricRepository containerMetricRepository,
+            ConfigurationService configurationService,
+            @Lazy AnomalyDetectionEngine anomalyDetectionEngine) {
+        this.hostCollector = hostCollector;
+        this.processCollector = processCollector;
+        this.dockerMonitorService = dockerMonitorService;
+        this.systemMetricRepository = systemMetricRepository;
+        this.processMetricRepository = processMetricRepository;
+        this.containerMetricRepository = containerMetricRepository;
+        this.configurationService = configurationService;
+        this.anomalyDetectionEngine = anomalyDetectionEngine;
+    }
 
     @Value("${sharp.monitoring.process-limit:100}")
     private int processLimit;
@@ -110,6 +130,13 @@ public class TelemetryCollectionService {
             lastError = null;
             status = "HEALTHY";
             totalCollections.incrementAndGet();
+
+            // 5. Run Phase 4C Anomaly Detection pipeline safely (never crashes telemetry collection)
+            try {
+                anomalyDetectionEngine.analyzeLatestSample(metric, procs);
+            } catch (Exception detEx) {
+                log.warn("Post-collection anomaly detection error: {}", detEx.getMessage());
+            }
         } catch (Exception e) {
             lastFailureAt = Instant.now();
             lastError = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();

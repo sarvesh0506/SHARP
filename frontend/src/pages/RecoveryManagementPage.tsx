@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import apiClient from '../api/client';
-import { Incident, RecoveryAction } from '../types';
+import { Incident, RecoveryAction, RecoveryRecommendation } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { PageHeader } from '../components/ui/PageHeader';
 import { StatCard } from '../components/ui/StatCard';
@@ -12,77 +12,57 @@ import {
   RotateCcw,
   CheckCircle,
   XCircle,
-  Clock,
   Lock,
   Play,
   RefreshCw,
   AlertTriangle,
+  Ban,
 } from 'lucide-react';
 
 const ALLOWLISTED_ACTIONS = [
-  {
-    type: 'RESTART_CONTAINER',
-    label: 'Restart Container',
-    defaultRisk: 'LOW',
-    description: 'Gracefully restarts the affected Docker container with health verification.',
-  },
-  {
-    type: 'FLUSH_REDIS_CACHE',
-    label: 'Flush Redis Cache',
-    defaultRisk: 'LOW',
-    description: 'Purges transient cache keys to clear stale or corrupted session state.',
-  },
-  {
-    type: 'RELOAD_CONFIG',
-    label: 'Reload Service Config',
-    defaultRisk: 'LOW',
-    description: 'Signals the target application to reload configuration without downtime.',
-  },
-  {
-    type: 'SCALE_REPLICAS',
-    label: 'Scale Service Replicas',
-    defaultRisk: 'HIGH',
-    description: 'Modifies cluster replica count. Always requires administrator approval.',
-  },
+  { type: 'RUN_HEALTH_PROBE', label: 'Run Service & Host Health Probe', risk: 'LOW', desc: 'Read-only telemetry & health probe.' },
+  { type: 'COLLECT_DIAGNOSTIC_SNAPSHOT', label: 'Collect Diagnostic Snapshot', risk: 'LOW', desc: 'Captures fresh host & process telemetry.' },
+  { type: 'CLEAR_STALE_TELEMETRY_CACHE', label: 'Purge Expired Telemetry Buffers', risk: 'LOW', desc: 'Removes expired (>6h) telemetry rows.' },
+  { type: 'RESTART_MONITORED_SERVICE', label: 'Restart Registered Service', risk: 'MEDIUM', desc: 'Controlled restart of registered application.' },
+  { type: 'THROTTLE_OR_SCALE_SERVICE', label: 'Throttle / Scale Service', risk: 'HIGH', desc: 'Admin approval required.' },
 ];
 
 export const RecoveryManagementPage: React.FC = () => {
   const { isAdmin } = useAuth();
-  const [actions, setActions] = useState<RecoveryAction[]>([]);
+  const [recommendations, setRecommendations] = useState<RecoveryRecommendation[]>([]);
+  const [executions, setExecutions] = useState<RecoveryAction[]>([]);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
 
-  // Trigger Form state
   const [selectedIncidentId, setSelectedIncidentId] = useState<string>('');
-  const [selectedActionType, setSelectedActionType] = useState<string>('RESTART_CONTAINER');
+  const [selectedActionType, setSelectedActionType] = useState<string>('RUN_HEALTH_PROBE');
   const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
 
-  // Reject modal state
-  const [rejectingId, setRejectingId] = useState<number | null>(null);
-  const [rejectReason, setRejectReason] = useState<string>('');
+  const [confirmExecuteRec, setConfirmExecuteRec] = useState<RecoveryRecommendation | null>(null);
+  const [executing, setExecuting] = useState(false);
 
   const fetchData = async () => {
     try {
       setIsRefreshing(true);
-      const [recRes, incRes] = await Promise.all([
-        apiClient.get('/recovery'),
+      const [recRes, execRes, incRes] = await Promise.all([
+        apiClient.get('/recovery/recommendations'),
+        apiClient.get('/recovery/executions'),
         apiClient.get('/incidents'),
       ]);
-      const recList: RecoveryAction[] = recRes.data?.data ?? [];
+      setRecommendations(recRes.data?.data ?? []);
+      setExecutions(execRes.data?.data ?? []);
       const incList: Incident[] = incRes.data?.data ?? [];
-      setActions(recList);
       setIncidents(incList);
-      const openInc = incList.filter((i) => i.status !== 'RESOLVED');
+      const openInc = incList.filter((i) => !['RESOLVED', 'CLOSED'].includes(i.status));
       if (!selectedIncidentId && openInc.length > 0) {
         setSelectedIncidentId(String(openInc[0].id));
       }
       setError(null);
-    } catch {
-      setError('Unable to load recovery actions from SHARP backend.');
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Unable to load recovery recommendations and executions.');
     } finally {
       setLoading(false);
       setIsRefreshing(false);
@@ -93,76 +73,72 @@ export const RecoveryManagementPage: React.FC = () => {
     fetchData();
   }, []);
 
-  const selectedPolicy = ALLOWLISTED_ACTIONS.find((a) => a.type === selectedActionType) ?? ALLOWLISTED_ACTIONS[0];
-
-  const handleTrigger = async (e: React.FormEvent) => {
+  const handleGenerateRec = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormError(null);
-    setFeedback(null);
-
     if (!selectedIncidentId) {
-      setFormError('Please select an active incident before initiating recovery.');
+      setError('Select an open incident first.');
       return;
     }
-
     try {
       setSubmitting(true);
-      await apiClient.post('/recovery/trigger', {
-        incidentId: Number(selectedIncidentId),
-        actionType: selectedPolicy.type,
-        riskLevel: selectedPolicy.defaultRisk,
+      setError(null);
+      setFeedback(null);
+      await apiClient.post(`/recovery/recommendations/incident/${selectedIncidentId}`, {
+        actionType: selectedActionType,
       });
-      setFeedback(
-        selectedPolicy.defaultRisk === 'HIGH'
-          ? `Action ${selectedPolicy.type} queued for Administrator Approval.`
-          : `Low-risk action ${selectedPolicy.type} initiated via backend Recovery Engine.`
-      );
+      setFeedback(`Recovery recommendation (${selectedActionType}) created for incident #${selectedIncidentId}.`);
       await fetchData();
     } catch (err: any) {
-      setFormError(err?.response?.data?.message || 'Failed to trigger recovery action.');
+      setError(err?.response?.data?.message || 'Failed to create recovery recommendation.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleApprove = async (id: number) => {
+  const handleRecAction = async (id: number, action: 'approve' | 'reject' | 'cancel') => {
     try {
+      setError(null);
       setFeedback(null);
-      await apiClient.post(`/recovery/${id}/approve`);
-      setFeedback(`Recovery action #${id} approved by administrator.`);
+      await apiClient.post(`/recovery/recommendations/${id}/${action}`, action === 'reject' ? { reason: 'Rejected in console' } : {});
+      setFeedback(`Recommendation #${id} ${action}d.`);
       await fetchData();
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Approval failed. Administrator role required.');
+      setError(err?.response?.data?.message || `Failed to ${action} recommendation #${id}.`);
     }
   };
 
-  const handleRejectSubmit = async (id: number) => {
-    if (!rejectReason.trim()) return;
+  const handleConfirmExecute = async () => {
+    if (!confirmExecuteRec) return;
     try {
-      await apiClient.post(`/recovery/${id}/reject`, { reason: rejectReason.trim() });
-      setRejectingId(null);
-      setRejectReason('');
-      setFeedback(`Recovery action #${id} rejected.`);
+      setExecuting(true);
+      setError(null);
+      setFeedback(null);
+      const res = await apiClient.post(`/recovery/recommendations/${confirmExecuteRec.id}/execute`);
+      const exec: RecoveryAction | undefined = res.data?.data;
+      setConfirmExecuteRec(null);
+      setFeedback(
+        exec
+          ? `Execution #${exec.id} completed — Verification: ${exec.verificationStatus}`
+          : 'Execution & independent verification completed.'
+      );
       await fetchData();
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Rejection failed.');
+      setConfirmExecuteRec(null);
+      setError(err?.response?.data?.message || 'Recovery execution failed or was blocked by policy.');
+    } finally {
+      setExecuting(false);
     }
   };
 
-  const pendingApprovals = actions.filter((a) => a.status === 'AWAITING_APPROVAL');
-  const activeExecutions = actions.filter((a) =>
-    ['PENDING', 'APPROVED', 'EXECUTING'].includes(a.status)
-  );
-  const verifiedSuccessCount = actions.filter(
-    (a) => a.verificationStatus === 'VERIFIED_SUCCESS' || a.status === 'SUCCESS'
-  ).length;
-  const openIncidents = incidents.filter((i) => i.status !== 'RESOLVED');
+  const pendingRecs = recommendations.filter((r) => r.status === 'PENDING' || r.status === 'APPROVED');
+  const verifiedCount = executions.filter((e) => e.verificationStatus === 'VERIFIED').length;
+  const openIncidents = incidents.filter((i) => !['RESOLVED', 'CLOSED'].includes(i.status));
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Recovery Management"
-        subtitle="Controlled allowlisted recovery execution, administrator approval gates, and verification status."
+        subtitle="Allowlisted recovery recommendations, policy & admin approval gates, controlled execution, and independent verification."
         onRefresh={fetchData}
         isRefreshing={isRefreshing}
       />
@@ -170,267 +146,189 @@ export const RecoveryManagementPage: React.FC = () => {
       {error && <ErrorBanner message={error} onRetry={fetchData} />}
 
       {feedback && (
-        <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-800/60 text-emerald-300 text-xs font-mono">
+        <div className="p-3.5 rounded-xl bg-[#34D399]/10 border border-[#34D399]/35 text-[#34D399] text-xs font-mono">
           {feedback}
         </div>
       )}
 
-      {/* KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Awaiting Approval"
-          value={pendingApprovals.length}
-          subtitle="High-risk safety gate"
-          icon={Lock}
-          trend={pendingApprovals.length > 0 ? 'Admin Required' : 'Clear'}
-          trendType={pendingApprovals.length > 0 ? 'negative' : 'positive'}
-          color={pendingApprovals.length > 0 ? 'text-amber-400' : 'text-emerald-400'}
-        />
-        <StatCard
-          title="Active Executions"
-          value={activeExecutions.length}
-          subtitle="Pending or executing"
-          icon={RotateCcw}
-          color="text-[#A78BFA]"
-        />
-        <StatCard
-          title="Verified Recoveries"
-          value={verifiedSuccessCount}
-          subtitle="Passed independent check"
-          icon={ShieldCheck}
-          color="text-emerald-400"
-        />
-        <StatCard
-          title="Open Incidents"
-          value={openIncidents.length}
-          subtitle="Eligible for remediation"
-          icon={AlertTriangle}
-          color="text-cyan-400"
-        />
+        <StatCard title="Active Recommendations" value={pendingRecs.length} subtitle="Pending or approved" icon={Lock} color="text-[#F59E0B]" />
+        <StatCard title="Total Executions" value={executions.length} subtitle="Controlled action runs" icon={RotateCcw} color="text-[#22D3EE]" />
+        <StatCard title="Independently Verified" value={verifiedCount} subtitle="Confirmed post-recovery" icon={ShieldCheck} color="text-[#34D399]" />
+        <StatCard title="Open Incidents" value={openIncidents.length} subtitle="Eligible for remediation" icon={AlertTriangle} color="text-[#A78BFA]" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: Allowlisted Trigger Form + Safety Policies */}
-        <div className="space-y-6">
-          <div className="bg-dark-900 border border-dark-700/80 rounded-xl p-5 shadow-lg space-y-4">
-            <h2 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-              <Play className="w-4 h-4 text-[#A78BFA]" />
-              Initiate Controlled Recovery
-            </h2>
+        {/* Left: Create Allowlisted Recommendation */}
+        <div className="bg-dark-900 border border-dark-700/80 rounded-xl p-5 shadow-lg space-y-4">
+          <h2 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
+            <Play className="w-4 h-4 text-[#A78BFA]" />
+            Recommend Safe Recovery
+          </h2>
 
-            <form onSubmit={handleTrigger} className="space-y-3 text-xs">
-              <div>
-                <label className="block text-slate-400 font-mono mb-1">Target Incident</label>
-                <select
-                  value={selectedIncidentId}
-                  onChange={(e) => setSelectedIncidentId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-slate-200 font-mono focus:outline-none focus:border-[#7C3AED]"
-                >
-                  <option value="">-- Select an active incident --</option>
-                  {openIncidents.map((inc) => (
-                    <option key={inc.id} value={String(inc.id)}>
-                      #{inc.id} [{inc.severity}] {inc.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-slate-400 font-mono mb-1">Allowlisted Action</label>
-                <select
-                  value={selectedActionType}
-                  onChange={(e) => setSelectedActionType(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-slate-200 font-mono focus:outline-none focus:border-[#7C3AED]"
-                >
-                  {ALLOWLISTED_ACTIONS.map((act) => (
-                    <option key={act.type} value={act.type}>
-                      {act.label} ({act.defaultRisk} RISK)
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="p-3 rounded-lg bg-dark-850 border border-dark-700/80 space-y-1.5">
-                <div className="flex items-center justify-between font-mono">
-                  <span className="text-slate-400">Risk Tier:</span>
-                  <span
-                    className={`font-bold ${
-                      selectedPolicy.defaultRisk === 'HIGH' ? 'text-rose-400' : 'text-emerald-400'
-                    }`}
-                  >
-                    {selectedPolicy.defaultRisk}
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-400 leading-relaxed">{selectedPolicy.description}</p>
-                {selectedPolicy.defaultRisk === 'HIGH' && (
-                  <p className="text-[11px] text-amber-400 font-mono flex items-center gap-1 pt-1">
-                    <Lock className="w-3 h-3" />
-                    Requires Administrator Approval before execution.
-                  </p>
-                )}
-              </div>
-
-              {formError && (
-                <div className="p-2.5 rounded bg-rose-950/50 border border-rose-800 text-rose-300 text-[11px]">
-                  {formError}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={submitting || openIncidents.length === 0}
-                className="w-full py-2 px-3 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] disabled:opacity-50 text-white font-medium transition flex items-center justify-center gap-2"
+          <form onSubmit={handleGenerateRec} className="space-y-3 text-xs">
+            <div>
+              <label className="block text-slate-400 font-mono mb-1">Target Incident</label>
+              <select
+                value={selectedIncidentId}
+                onChange={(e) => setSelectedIncidentId(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-slate-200 font-mono"
               >
-                <ShieldCheck className="w-4 h-4" />
-                {submitting ? 'Submitting...' : 'Submit Recovery Request'}
-              </button>
-            </form>
-          </div>
-        </div>
-
-        {/* Right 2 Columns: Approval Queue + Active/Recent Recovery Actions */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Approval Queue */}
-          <div className="bg-dark-900 border border-dark-700/80 rounded-xl overflow-hidden shadow-lg">
-            <div className="p-4 bg-dark-850 border-b border-dark-700 flex items-center justify-between">
-              <span className="text-xs font-mono font-semibold text-amber-400 uppercase flex items-center gap-2">
-                <Lock className="w-3.5 h-3.5" />
-                Administrator Approval Queue ({pendingApprovals.length})
-              </span>
-              {!isAdmin && (
-                <span className="text-[11px] font-mono text-slate-500">Read-only (Operator)</span>
-              )}
+                <option value="">-- Select open incident --</option>
+                {openIncidents.map((inc) => (
+                  <option key={inc.id} value={String(inc.id)}>
+                    #{inc.id} [{inc.severity}] {inc.title}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            {loading ? (
-              <div className="p-8 text-center text-slate-500 text-xs font-mono">
-                <RefreshCw className="w-4 h-4 animate-spin inline mr-2 text-[#7C3AED]" />
-                Loading approval queue...
-              </div>
-            ) : pendingApprovals.length === 0 ? (
-              <div className="p-6 text-center text-slate-500 text-xs font-mono">
-                No high-risk recovery actions awaiting approval.
-              </div>
-            ) : (
-              <div className="divide-y divide-dark-800">
-                {pendingApprovals.map((act) => (
-                  <div key={act.id} className="p-4 space-y-3">
+            <div>
+              <label className="block text-slate-400 font-mono mb-1">Allowlisted Action</label>
+              <select
+                value={selectedActionType}
+                onChange={(e) => setSelectedActionType(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-slate-200 font-mono"
+              >
+                {ALLOWLISTED_ACTIONS.map((a) => (
+                  <option key={a.type} value={a.type}>
+                    {a.label} ({a.risk})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="p-3 rounded-lg bg-dark-850 border border-dark-700 text-[11px] text-slate-400">
+              {ALLOWLISTED_ACTIONS.find((a) => a.type === selectedActionType)?.desc}
+            </div>
+
+            <button
+              type="submit"
+              disabled={submitting || openIncidents.length === 0}
+              className="w-full py-2 px-3 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-medium disabled:opacity-50"
+            >
+              {submitting ? 'Creating...' : 'Create Recommendation'}
+            </button>
+          </form>
+        </div>
+
+        {/* Right 2 Columns: Recommendations Queue */}
+        <div className="lg:col-span-2 bg-dark-900 border border-dark-700/80 rounded-xl overflow-hidden shadow-lg">
+          <div className="p-4 bg-dark-850 border-b border-dark-700 flex items-center justify-between text-xs font-mono">
+            <span className="text-slate-300 font-semibold uppercase">Recovery Recommendations</span>
+            <span className="text-slate-500">{recommendations.length} total</span>
+          </div>
+
+          {loading ? (
+            <div className="p-10 text-center text-slate-500 font-mono text-xs">
+              <RefreshCw className="w-4 h-4 animate-spin inline mr-2 text-[#7C3AED]" />
+              Loading recommendations...
+            </div>
+          ) : recommendations.length === 0 ? (
+            <EmptyState
+              icon={<ShieldCheck className="w-8 h-8" />}
+              title="No Recommendations Yet"
+              description="Generate a recommendation from RCA or the panel on the left."
+            />
+          ) : (
+            <div className="divide-y divide-dark-800">
+              {recommendations.map((rec) => {
+                const canExecute =
+                  rec.status === 'APPROVED' || (!rec.approvalRequired && rec.status === 'PENDING');
+                const adminBlocked = (rec.riskLevel === 'HIGH' || rec.riskLevel === 'CRITICAL') && !isAdmin;
+
+                return (
+                  <div key={rec.id} className="p-4 space-y-2.5">
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <div className="text-sm font-semibold text-slate-200 font-mono">
-                          #{act.id} · {act.actionType}
+                          #{rec.id} · {rec.actionName}
                         </div>
                         <div className="text-xs text-slate-400 mt-0.5">
-                          Incident #{act.incidentId} {act.incidentTitle ? `— ${act.incidentTitle}` : ''}
+                          Incident #{rec.incidentId} · Target: <span className="font-mono text-slate-300">{rec.targetResource || 'Host'}</span>
+                        </div>
+                        <div className="text-[11px] font-mono text-slate-500 mt-1">
+                          Risk: <span className={rec.riskLevel === 'HIGH' ? 'text-rose-400 font-bold' : 'text-[#22D3EE]'}>{rec.riskLevel}</span> · Policy: {rec.policyRule}
                         </div>
                       </div>
-                      <StatusBadge status={act.status} />
+                      <StatusBadge status={rec.status} />
                     </div>
 
-                    {isAdmin && (
-                      <div className="flex flex-wrap items-center gap-2">
-                        <button
-                          onClick={() => handleApprove(act.id)}
-                          className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium flex items-center gap-1.5 transition"
-                        >
-                          <CheckCircle className="w-3.5 h-3.5" /> Approve & Authorize
-                        </button>
-                        <button
-                          onClick={() => setRejectingId(act.id)}
-                          className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium flex items-center gap-1.5 transition"
-                        >
-                          <XCircle className="w-3.5 h-3.5" /> Reject
-                        </button>
-                      </div>
-                    )}
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {rec.status === 'PENDING' && (
+                        <>
+                          <button
+                            disabled={adminBlocked}
+                            onClick={() => handleRecAction(rec.id, 'approve')}
+                            className="px-3 py-1 rounded bg-[#34D399]/20 hover:bg-[#34D399]/30 text-[#34D399] border border-[#34D399]/40 text-xs font-medium flex items-center gap-1 disabled:opacity-40"
+                          >
+                            <CheckCircle className="w-3.5 h-3.5" /> Approve
+                          </button>
+                          <button
+                            onClick={() => handleRecAction(rec.id, 'reject')}
+                            className="px-3 py-1 rounded bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/40 text-xs font-medium flex items-center gap-1"
+                          >
+                            <XCircle className="w-3.5 h-3.5" /> Reject
+                          </button>
+                        </>
+                      )}
 
-                    {rejectingId === act.id && (
-                      <div className="flex gap-2 pt-1">
-                        <input
-                          type="text"
-                          value={rejectReason}
-                          onChange={(e) => setRejectReason(e.target.value)}
-                          placeholder="Enter rejection reason..."
-                          className="flex-1 px-3 py-1.5 rounded-lg bg-dark-850 border border-dark-700 text-xs text-slate-200 focus:outline-none focus:border-rose-500"
-                        />
+                      {canExecute && rec.riskLevel !== 'CRITICAL' && (
                         <button
-                          onClick={() => handleRejectSubmit(act.id)}
-                          className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium"
+                          disabled={adminBlocked}
+                          onClick={() => setConfirmExecuteRec(rec)}
+                          className="px-3 py-1 rounded bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-medium flex items-center gap-1 disabled:opacity-40"
                         >
-                          Confirm
+                          <Play className="w-3.5 h-3.5" /> Execute & Verify
                         </button>
+                      )}
+
+                      {(rec.status === 'PENDING' || rec.status === 'APPROVED') && (
                         <button
-                          onClick={() => {
-                            setRejectingId(null);
-                            setRejectReason('');
-                          }}
-                          className="px-3 py-1.5 rounded-lg bg-dark-800 text-slate-300 text-xs"
+                          onClick={() => handleRecAction(rec.id, 'cancel')}
+                          className="px-3 py-1 rounded bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs flex items-center gap-1"
                         >
-                          Cancel
+                          <Ban className="w-3.5 h-3.5" /> Cancel
                         </button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* All Recovery Execution Statuses */}
-          <div className="bg-dark-900 border border-dark-700/80 rounded-xl overflow-hidden shadow-lg">
-            <div className="p-4 bg-dark-850 border-b border-dark-700 flex items-center justify-between text-xs font-mono">
-              <span className="text-slate-300 font-semibold uppercase">Recovery Execution & Verification</span>
-              <span className="text-slate-500">Total: {actions.length}</span>
+                );
+              })}
             </div>
-
-            {actions.length === 0 ? (
-              <EmptyState
-                icon={<RotateCcw className="w-8 h-8" />}
-                title="No Recovery Actions Yet"
-                description="Initiate a recovery action from the panel on the left or wait for autonomous remediation."
-              />
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-dark-850/60 border-b border-dark-800 text-slate-400 uppercase font-mono text-[11px]">
-                    <tr>
-                      <th className="py-3 px-4">Action</th>
-                      <th className="py-3 px-4">Incident</th>
-                      <th className="py-3 px-4">Risk</th>
-                      <th className="py-3 px-4">Execution</th>
-                      <th className="py-3 px-4">Verification</th>
-                      <th className="py-3 px-4">Initiated</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-dark-800 font-mono text-[11px]">
-                    {actions.map((act) => (
-                      <tr key={act.id} className="hover:bg-dark-850/60 transition">
-                        <td className="py-3 px-4 text-slate-200 font-semibold">{act.actionType}</td>
-                        <td className="py-3 px-4 text-slate-400">#{act.incidentId}</td>
-                        <td className="py-3 px-4">
-                          <span className={act.riskLevel === 'HIGH' ? 'text-rose-400 font-bold' : 'text-[#A78BFA]'}>
-                            {act.riskLevel}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <StatusBadge status={act.status} />
-                        </td>
-                        <td className="py-3 px-4">
-                          <StatusBadge status={act.verificationStatus} />
-                        </td>
-                        <td className="py-3 px-4 text-slate-500 whitespace-nowrap flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {new Date(act.initiatedAt).toLocaleString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      {confirmExecuteRec && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-dark-900 border border-[#7C3AED]/40 rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <h3 className="text-sm font-bold text-slate-100 font-mono">Confirm Recovery Execution</h3>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Execute <strong className="text-[#22D3EE]">{confirmExecuteRec.actionType}</strong> on{' '}
+              <strong className="text-white">{confirmExecuteRec.targetResource}</strong> (Incident #{confirmExecuteRec.incidentId})?
+              SHARP will run independent post-recovery verification afterward.
+            </p>
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                disabled={executing}
+                onClick={() => setConfirmExecuteRec(null)}
+                className="px-3 py-1.5 rounded bg-dark-800 text-slate-300 text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={executing}
+                onClick={handleConfirmExecute}
+                className="px-4 py-1.5 rounded bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-medium disabled:opacity-50"
+              >
+                {executing ? 'Executing & Verifying...' : 'Confirm Execute'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

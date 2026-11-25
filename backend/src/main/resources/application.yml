@@ -21,6 +21,12 @@ sharp:
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
   ai-service:
     url: ${AI_SERVICE_URL:http://localhost:8000}
+  ai:
+    enabled: ${AI_ENABLED:true}
+    base-url: ${AI_SERVICE_URL:http://localhost:8000}
+    connection-timeout-ms: ${AI_CONNECT_TIMEOUT_MS:3000}
+    response-timeout-ms: ${AI_RESPONSE_TIMEOUT_MS:10000}
+    max-retries: 1
   monitoring:
     enabled: ${MONITORING_ENABLED:true}
     poll-interval-ms: ${MONITORING_POLL_INTERVAL_MS:10000}

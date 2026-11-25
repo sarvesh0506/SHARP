@@ -51,9 +51,30 @@ public class Incident {
     @Column(columnDefinition = "TEXT")
     private String evidence;
 
+    @Column(length = 40)
+    @Builder.Default
+    private String source = "MANUAL"; // AUTO_DETECTION, MANUAL
+
+    @Column(name = "affected_resource", length = 150)
+    private String affectedResource;
+
+    @Column(name = "anomaly_id")
+    private Long anomalyId;
+
+    @Column(name = "rca_status", length = 30)
+    @Builder.Default
+    private String rcaStatus = "PENDING"; // PENDING, COMPLETED, FALLBACK_COMPLETED
+
+    @Column(name = "recovery_status", length = 30)
+    @Builder.Default
+    private String recoveryStatus = "NONE"; // NONE, RECOMMENDED, PENDING_APPROVAL, EXECUTING, VERIFYING, VERIFIED, FAILED
+
     @CreationTimestamp
     @Column(name = "opened_at", updatable = false)
     private Instant openedAt;
+
+    @Column(name = "updated_at")
+    private Instant updatedAt;
 
     @Column(name = "resolved_at")
     private Instant resolvedAt;
