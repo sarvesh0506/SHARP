@@ -3,9 +3,11 @@ package com.sharp.controller;
 import com.sharp.dto.ApiResponse;
 import com.sharp.dto.RecoveryActionDto;
 import com.sharp.entity.RecoveryRecommendation;
+import com.sharp.exception.ApiException;
 import com.sharp.service.RecoveryService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -104,12 +106,20 @@ public class RecoveryController {
 
     @PostMapping("/trigger")
     public ResponseEntity<ApiResponse<RecoveryActionDto>> triggerRecovery(
-            @RequestBody Map<String, Object> body,
+            @RequestBody(required = false) Map<String, Object> body,
             Authentication authentication,
             HttpServletRequest request) {
-        Long incidentId = Long.valueOf(body.get("incidentId").toString());
+        if (body == null || body.get("incidentId") == null || body.get("actionType") == null) {
+            throw new ApiException("incidentId and actionType are required", HttpStatus.BAD_REQUEST);
+        }
+        Long incidentId;
+        try {
+            incidentId = Long.valueOf(body.get("incidentId").toString());
+        } catch (NumberFormatException ex) {
+            throw new ApiException("incidentId must be a valid numeric ID", HttpStatus.BAD_REQUEST);
+        }
         String actionType = body.get("actionType").toString();
-        String riskLevel = body.getOrDefault("riskLevel", "LOW").toString();
+        String riskLevel = body.get("riskLevel") != null ? body.get("riskLevel").toString() : "LOW";
         String username = authentication != null ? authentication.getName() : "OPERATOR";
         return ResponseEntity.ok(ApiResponse.ok("Recovery action processed",
                 recoveryService.triggerRecovery(incidentId, actionType, riskLevel, username, request.getRemoteAddr())));

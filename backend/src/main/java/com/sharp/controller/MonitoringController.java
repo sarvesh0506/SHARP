@@ -3,12 +3,14 @@ package com.sharp.controller;
 import com.sharp.dto.ApiResponse;
 import com.sharp.entity.ProcessMetric;
 import com.sharp.entity.SystemMetric;
+import com.sharp.exception.ApiException;
 import com.sharp.monitoring.DockerMonitorService;
 import com.sharp.monitoring.TelemetryCollectionService;
 import com.sharp.repository.ProcessMetricRepository;
 import com.sharp.repository.SystemMetricRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,13 +42,31 @@ public class MonitoringController {
             @RequestParam(required = false) String to,
             @RequestParam(defaultValue = "200") int limit) {
 
-        int safeLimit = Math.max(1, Math.min(limit, 500));
-        Instant toTime = to != null && !to.isBlank() ? Instant.parse(to) : Instant.now();
-        Instant fromTime = from != null && !from.isBlank() ? Instant.parse(from) : toTime.minus(1, ChronoUnit.HOURS);
+        if (limit < 1) {
+            throw new ApiException("limit must be at least 1", HttpStatus.BAD_REQUEST);
+        }
+        int safeLimit = Math.min(limit, 500);
 
-        List<SystemMetric> metrics = systemMetricRepository.findByCollectedAtBetweenOrderByCollectedAtAsc(
+        Instant toTime = to != null && !to.isBlank() ? Instant.parse(to.trim()) : Instant.now();
+        Instant fromTime = from != null && !from.isBlank() ? Instant.parse(from.trim()) : toTime.minus(1, ChronoUnit.HOURS);
+
+        if (fromTime.isAfter(toTime)) {
+            throw new ApiException("'from' timestamp must be before or equal to 'to' timestamp", HttpStatus.BAD_REQUEST);
+        }
+
+        // Fetch the newest 'safeLimit' records in [fromTime, toTime], then reverse into chronological order for charting.
+        List<SystemMetric> newestDesc = systemMetricRepository.findByCollectedAtBetweenOrderByCollectedAtDescIdDesc(
                 fromTime, toTime, PageRequest.of(0, safeLimit));
-        return ResponseEntity.ok(ApiResponse.ok(metrics));
+
+        Map<Instant, SystemMetric> dedupedByTimestamp = new LinkedHashMap<>();
+        for (int i = newestDesc.size() - 1; i >= 0; i--) {
+            SystemMetric metric = newestDesc.get(i);
+            // Because newestDesc is ordered DESC, iterating backwards visits older duplicates first,
+            // so put() retains the latest record for any duplicate timestamp while preserving chronological order.
+            dedupedByTimestamp.put(metric.getCollectedAt(), metric);
+        }
+
+        return ResponseEntity.ok(ApiResponse.ok(new ArrayList<>(dedupedByTimestamp.values())));
     }
 
     @GetMapping("/processes")

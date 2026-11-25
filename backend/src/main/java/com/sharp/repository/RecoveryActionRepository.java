@@ -11,5 +11,7 @@ public interface RecoveryActionRepository extends JpaRepository<RecoveryAction, 
     List<RecoveryAction> findByIncidentId(Long incidentId);
     List<RecoveryAction> findByStatus(String status);
     List<RecoveryAction> findTop10ByOrderByInitiatedAtDesc();
+    List<RecoveryAction> findAllByOrderByInitiatedAtDesc();
+    boolean existsByIncidentIdAndStatusIn(Long incidentId, List<String> statuses);
     long countByStatus(String status);
 }

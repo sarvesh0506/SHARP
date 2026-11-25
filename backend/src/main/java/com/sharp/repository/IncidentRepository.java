@@ -10,6 +10,7 @@ import java.util.Optional;
 @Repository
 public interface IncidentRepository extends JpaRepository<Incident, Long> {
     List<Incident> findByStatus(String status);
+    List<Incident> findByStatusIn(List<String> statuses);
     List<Incident> findBySeverity(String severity);
     List<Incident> findByApplicationId(Long applicationId);
     List<Incident> findTop10ByOrderByOpenedAtDesc();
@@ -17,4 +18,5 @@ public interface IncidentRepository extends JpaRepository<Incident, Long> {
     Optional<Incident> findTopByAffectedResourceAndStatusNotInOrderByOpenedAtDesc(String affectedResource, List<String> closedStatuses);
     long countByStatus(String status);
     long countByStatusNot(String status);
+    long countByStatusNotIn(List<String> statuses);
 }

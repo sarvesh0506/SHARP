@@ -24,11 +24,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class RecoveryService {
+
+    private static final List<String> ACTIVE_EXECUTION_STATUSES = List.of("EXECUTING", "VERIFYING");
 
     private final RecoveryActionRepository recoveryActionRepository;
     private final RecoveryRecommendationRepository recommendationRepository;
@@ -42,11 +45,12 @@ public class RecoveryService {
     private final EventBroadcastService eventBroadcastService;
     private final NotificationService notificationService;
 
+    private final ConcurrentHashMap<Long, Object> incidentExecutionLocks = new ConcurrentHashMap<>();
+
     @Transactional(readOnly = true)
     public List<RecoveryActionDto> getAllActions() {
-        return recoveryActionRepository.findAll().stream()
+        return recoveryActionRepository.findAllByOrderByInitiatedAtDesc().stream()
                 .map(this::toDto)
-                .sorted((a, b) -> b.getInitiatedAt().compareTo(a.getInitiatedAt()))
                 .collect(Collectors.toList());
     }
 
@@ -147,6 +151,7 @@ public class RecoveryService {
         }
         rec.setStatus("REJECTED");
         rec = recommendationRepository.save(rec);
+        updateIncidentRecoveryStatusIfWaiting(rec.getIncidentId(), "REJECTED");
         auditService.record(username, "RECOMMENDATION_REJECTED", "RECOVERY_RECOMMENDATION", recId.toString(),
                 "Rejected recommendation: " + reason, ip);
         return rec;
@@ -162,6 +167,7 @@ public class RecoveryService {
         }
         rec.setStatus("CANCELLED");
         rec = recommendationRepository.save(rec);
+        updateIncidentRecoveryStatusIfWaiting(rec.getIncidentId(), "CANCELLED");
         auditService.record(username, "RECOMMENDATION_CANCELLED", "RECOVERY_RECOMMENDATION", recId.toString(),
                 "Cancelled recommendation " + rec.getActionType(), ip);
         return rec;
@@ -255,17 +261,28 @@ public class RecoveryService {
         if (!"AWAITING_APPROVAL".equalsIgnoreCase(action.getStatus())) {
             throw new ApiException("Action is not in AWAITING_APPROVAL state (current status: " + action.getStatus() + ")", HttpStatus.BAD_REQUEST);
         }
+        if (action.getIncident() == null || action.getIncident().getId() == null) {
+            throw new ApiException("Recovery action is not linked to an incident", HttpStatus.BAD_REQUEST);
+        }
 
+        Long incidentId = action.getIncident().getId();
         RecoveryPolicyEngine.ActionPolicy policy = policyEngine.validateAndGetPolicy(action.getActionType());
-        action.setStatus("APPROVED");
-        action.setApprovedBy(adminUsername);
-        action.setApprovalTimestamp(Instant.now());
-        recoveryActionRepository.save(action);
 
-        auditService.record(adminUsername, "RECOVERY_APPROVED", "RECOVERY_ACTION", action.getId().toString(),
-                "Administrator approved recovery action " + action.getActionType(), ip);
+        Object lock = incidentExecutionLocks.computeIfAbsent(incidentId, k -> new Object());
+        synchronized (lock) {
+            if (recoveryActionRepository.existsByIncidentIdAndStatusIn(incidentId, ACTIVE_EXECUTION_STATUSES)) {
+                throw new ApiException("A recovery execution is already in progress for incident #" + incidentId, HttpStatus.CONFLICT);
+            }
+            action.setStatus("EXECUTING");
+            action.setApprovedBy(adminUsername);
+            action.setApprovalTimestamp(Instant.now());
+            recoveryActionRepository.save(action);
 
-        return executeAndVerifyExisting(action, policy, adminUsername, ip);
+            auditService.record(adminUsername, "RECOVERY_APPROVED", "RECOVERY_ACTION", action.getId().toString(),
+                    "Administrator approved recovery action " + action.getActionType(), ip);
+
+            return executeAndVerifyExisting(action, policy, adminUsername, ip);
+        }
     }
 
     @Transactional
@@ -286,6 +303,19 @@ public class RecoveryService {
                 + "Rejected by administrator: " + reason);
 
         action = recoveryActionRepository.save(action);
+
+        if (action.getIncident() != null) {
+            Incident incident = action.getIncident();
+            if ("RECOVERY_PENDING".equalsIgnoreCase(incident.getStatus())) {
+                incident.setStatus("OPEN");
+            }
+            if ("PENDING_APPROVAL".equalsIgnoreCase(incident.getRecoveryStatus())) {
+                incident.setRecoveryStatus("REJECTED");
+            }
+            incident.setUpdatedAt(Instant.now());
+            incidentRepository.save(incident);
+        }
+
         auditService.record(adminUsername, "RECOVERY_REJECTED", "RECOVERY_ACTION", action.getId().toString(),
                 "Administrator rejected recovery action: " + reason, ip);
 
@@ -298,29 +328,42 @@ public class RecoveryService {
         Incident incident = incidentRepository.findById(incidentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Incident", "id", incidentId));
 
-        // Prevent duplicate concurrent execution on the same incident
-        boolean alreadyRunning = recoveryActionRepository.findAll().stream()
-                .anyMatch(a -> a.getIncident() != null && a.getIncident().getId().equals(incidentId)
-                        && ("EXECUTING".equals(a.getStatus()) || "VERIFYING".equals(a.getStatus())));
-        if (alreadyRunning) {
-            throw new ApiException("A recovery execution is already in progress for incident #" + incidentId, HttpStatus.CONFLICT);
+        Object lock = incidentExecutionLocks.computeIfAbsent(incidentId, k -> new Object());
+        synchronized (lock) {
+            if (recoveryActionRepository.existsByIncidentIdAndStatusIn(incidentId, ACTIVE_EXECUTION_STATUSES)) {
+                throw new ApiException("A recovery execution is already in progress for incident #" + incidentId, HttpStatus.CONFLICT);
+            }
+
+            RecoveryAction action = recoveryActionRepository.save(RecoveryAction.builder()
+                    .incident(incident)
+                    .recommendationId(recId)
+                    .actionType(policy.actionType())
+                    .riskLevel(policy.riskLevel())
+                    .status("EXECUTING")
+                    .requiresApproval(policy.approvalRequired())
+                    .targetResource(targetResource)
+                    .initiatedBy(username)
+                    .executionDetails("Executing safe allowlisted action: " + policy.actionName())
+                    .verificationStatus("UNVERIFIED")
+                    .initiatedAt(Instant.now())
+                    .build());
+
+            return executeAndVerifyExisting(action, policy, username, ip);
         }
+    }
 
-        RecoveryAction action = recoveryActionRepository.save(RecoveryAction.builder()
-                .incident(incident)
-                .recommendationId(recId)
-                .actionType(policy.actionType())
-                .riskLevel(policy.riskLevel())
-                .status("EXECUTING")
-                .requiresApproval(policy.approvalRequired())
-                .targetResource(targetResource)
-                .initiatedBy(username)
-                .executionDetails("Executing safe allowlisted action: " + policy.actionName())
-                .verificationStatus("UNVERIFIED")
-                .initiatedAt(Instant.now())
-                .build());
-
-        return executeAndVerifyExisting(action, policy, username, ip);
+    private void updateIncidentRecoveryStatusIfWaiting(Long incidentId, String newRecoveryStatus) {
+        if (incidentId == null) {
+            return;
+        }
+        incidentRepository.findById(incidentId).ifPresent(incident -> {
+            if ("PENDING_APPROVAL".equalsIgnoreCase(incident.getRecoveryStatus())
+                    || "RECOMMENDED".equalsIgnoreCase(incident.getRecoveryStatus())) {
+                incident.setRecoveryStatus(newRecoveryStatus);
+                incident.setUpdatedAt(Instant.now());
+                incidentRepository.save(incident);
+            }
+        });
     }
 
     private RecoveryActionDto executeAndVerifyExisting(

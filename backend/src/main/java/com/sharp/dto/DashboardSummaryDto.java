@@ -16,8 +16,8 @@ public class DashboardSummaryDto {
     private long healthyApplications;
     private long unhealthyApplications;
     private long activeIncidents;
-    private double recoverySuccessRate;
-    private double avgRecoveryTimeSeconds;
+    private Double recoverySuccessRate;
+    private Double avgRecoveryTimeSeconds;
     private double avgCpuUsage;
     private double avgMemoryUsage;
     private List<ApplicationDto> recentApplications;
