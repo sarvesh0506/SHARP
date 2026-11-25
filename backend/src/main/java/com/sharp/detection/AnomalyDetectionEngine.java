@@ -2,6 +2,7 @@ package com.sharp.detection;
 
 import com.sharp.ai.AiServiceClient;
 import com.sharp.entity.AnomalyEvent;
+import com.sharp.entity.NotificationType;
 import com.sharp.entity.ProcessMetric;
 import com.sharp.entity.SystemMetric;
 import com.sharp.repository.AnomalyEventRepository;
@@ -10,6 +11,7 @@ import com.sharp.repository.SystemMetricRepository;
 import com.sharp.service.ConfigurationService;
 import com.sharp.service.EventBroadcastService;
 import com.sharp.service.IncidentService;
+import com.sharp.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +38,7 @@ public class AnomalyDetectionEngine {
     private final AiServiceClient aiServiceClient;
     private final IncidentService incidentService;
     private final EventBroadcastService eventBroadcastService;
+    private final NotificationService notificationService;
 
     private final AtomicBoolean analyzing = new AtomicBoolean(false);
     private final AtomicLong lastAnalyzedMetricId = new AtomicLong(-1L);
@@ -269,6 +272,19 @@ public class AnomalyDetectionEngine {
                 .build());
 
         eventBroadcastService.publish("ANOMALY_DETECTED", created);
+        if ("CRITICAL".equalsIgnoreCase(severity) || "HIGH".equalsIgnoreCase(severity)) {
+            notificationService.notifySafe(
+                    NotificationType.ANOMALY_DETECTED,
+                    severity,
+                    severity + " Anomaly: " + metricName + " on " + resourceName,
+                    description,
+                    created.getId(),
+                    null,
+                    null,
+                    "ANOMALY:" + resourceName + ":" + metricName + ":" + severity,
+                    NotificationService.RecipientTarget.ADMINS_AND_OPERATORS
+            );
+        }
         return Optional.of(created);
     }
 

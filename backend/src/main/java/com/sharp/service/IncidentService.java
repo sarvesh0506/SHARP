@@ -4,6 +4,7 @@ import com.sharp.dto.IncidentDto;
 import com.sharp.entity.AnomalyEvent;
 import com.sharp.entity.ApplicationEntity;
 import com.sharp.entity.Incident;
+import com.sharp.entity.NotificationType;
 import com.sharp.exception.ApiException;
 import com.sharp.exception.ResourceNotFoundException;
 import com.sharp.repository.ApplicationRepository;
@@ -25,6 +26,7 @@ public class IncidentService {
     private final ApplicationRepository applicationRepository;
     private final AuditService auditService;
     private final EventBroadcastService eventBroadcastService;
+    private final NotificationService notificationService;
 
     private static final List<String> CLOSED_STATUSES = List.of("RESOLVED", "CLOSED");
 
@@ -81,6 +83,17 @@ public class IncidentService {
                 "Opened incident " + incident.getTitle(), ip);
         IncidentDto result = toDto(incident);
         eventBroadcastService.publish("INCIDENT_CREATED", result);
+        notificationService.notifySafe(
+                NotificationType.INCIDENT_CREATED,
+                incident.getSeverity(),
+                "Incident #" + incident.getId() + ": " + incident.getTitle(),
+                incident.getDescription(),
+                incident.getAnomalyId(),
+                incident.getId(),
+                null,
+                "INCIDENT_CREATED:" + incident.getId(),
+                NotificationService.RecipientTarget.ADMINS_AND_OPERATORS
+        );
         return result;
     }
 
@@ -123,6 +136,17 @@ public class IncidentService {
         auditService.record("SYSTEM", "INCIDENT_AUTO_CREATED", "INCIDENT", created.getId().toString(),
                 "Auto-created from anomaly #" + anomaly.getId() + " (" + anomaly.getDetectionMethod() + ")", "127.0.0.1");
         eventBroadcastService.publish("INCIDENT_CREATED", toDto(created));
+        notificationService.notifySafe(
+                NotificationType.INCIDENT_CREATED,
+                created.getSeverity(),
+                "Auto-Incident #" + created.getId() + ": " + created.getTitle(),
+                created.getDescription(),
+                anomaly.getId(),
+                created.getId(),
+                null,
+                "INCIDENT_CREATED:" + created.getId(),
+                NotificationService.RecipientTarget.ADMINS_AND_OPERATORS
+        );
         return created.getId();
     }
 
@@ -158,6 +182,20 @@ public class IncidentService {
                 "Transitioned incident #" + id + " to " + normalized, ip);
         IncidentDto dto = toDto(incident);
         eventBroadcastService.publish("INCIDENT_STATUS_CHANGED", dto);
+        NotificationType nType = "RESOLVED".equals(normalized)
+                ? NotificationType.INCIDENT_RESOLVED
+                : NotificationType.INCIDENT_UPDATED;
+        notificationService.notifySafe(
+                nType,
+                "RESOLVED".equals(normalized) ? "INFO" : incident.getSeverity(),
+                "Incident #" + incident.getId() + " " + normalized,
+                "Incident '" + incident.getTitle() + "' transitioned to " + normalized + " by " + username,
+                incident.getAnomalyId(),
+                incident.getId(),
+                null,
+                "INCIDENT_STATUS:" + incident.getId() + ":" + normalized,
+                NotificationService.RecipientTarget.ADMINS_AND_OPERATORS
+        );
         return dto;
     }
 

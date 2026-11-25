@@ -52,7 +52,10 @@ public class SecurityConfig {
                                 "/ws/**",
                                 "/h2-console/**"
                         ).permitAll()
+                        // User-owned notifications (ownership enforced in NotificationService)
+                        .requestMatchers("/api/v1/notifications/**").authenticated()
                         // Admin restricted endpoints
+                        .requestMatchers("/api/v1/users/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/recovery/*/approve").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/recovery/*/reject").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/**").hasAuthority("ROLE_ADMIN")

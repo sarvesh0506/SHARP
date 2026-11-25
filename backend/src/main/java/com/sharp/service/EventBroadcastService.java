@@ -29,4 +29,17 @@ public class EventBroadcastService {
             log.debug("WebSocket broadcast skipped ({}): {}", eventType, e.getMessage());
         }
     }
+
+    public void publishToUser(String username, String eventType, Object payload) {
+        if (username == null || username.isBlank()) return;
+        try {
+            Map<String, Object> envelope = new LinkedHashMap<>();
+            envelope.put("type", eventType);
+            envelope.put("timestamp", Instant.now().toString());
+            envelope.put("payload", payload);
+            messagingTemplate.convertAndSendToUser(username, "/queue/notifications", envelope);
+        } catch (Exception e) {
+            log.debug("User WebSocket broadcast skipped ({} -> {}): {}", eventType, username, e.getMessage());
+        }
+    }
 }

@@ -3,6 +3,7 @@ package com.sharp.service;
 import com.sharp.dto.RecoveryActionDto;
 import com.sharp.entity.AnomalyEvent;
 import com.sharp.entity.Incident;
+import com.sharp.entity.NotificationType;
 import com.sharp.entity.RecoveryAction;
 import com.sharp.entity.RecoveryRecommendation;
 import com.sharp.entity.RootCauseAnalysis;
@@ -39,6 +40,7 @@ public class RecoveryService {
     private final VerificationService verificationService;
     private final AuditService auditService;
     private final EventBroadcastService eventBroadcastService;
+    private final NotificationService notificationService;
 
     @Transactional(readOnly = true)
     public List<RecoveryActionDto> getAllActions() {
@@ -99,6 +101,19 @@ public class RecoveryService {
         auditService.record(username, "RECOVERY_RECOMMENDED", "RECOVERY_RECOMMENDATION", rec.getId().toString(),
                 "Recommended " + policy.actionType() + " (" + policy.riskLevel() + ") for incident #" + incidentId, ip);
         eventBroadcastService.publish("RECOVERY_RECOMMENDED", rec);
+        if (policy.approvalRequired()) {
+            notificationService.notifySafe(
+                    NotificationType.RECOVERY_APPROVAL_REQUIRED,
+                    policy.riskLevel(),
+                    "Approval Required: " + policy.actionType(),
+                    "Recommendation #" + rec.getId() + " for Incident #" + incidentId + " requires approval.",
+                    incident.getAnomalyId(),
+                    incidentId,
+                    null,
+                    "REC_APPROVAL:" + rec.getId(),
+                    NotificationService.RecipientTarget.ADMINS_ONLY
+            );
+        }
         return rec;
     }
 
@@ -215,6 +230,17 @@ public class RecoveryService {
 
             auditService.record(username, "RECOVERY_INITIATED", "RECOVERY_ACTION", pending.getId().toString(),
                     "Queued " + policy.actionType() + " awaiting approval", ip);
+            notificationService.notifySafe(
+                    NotificationType.RECOVERY_APPROVAL_REQUIRED,
+                    policy.riskLevel(),
+                    "Admin Approval Required: " + policy.actionType(),
+                    "Recovery action #" + pending.getId() + " for Incident #" + incidentId + " is awaiting administrator approval.",
+                    incident.getAnomalyId(),
+                    incidentId,
+                    pending.getId(),
+                    "RECOVERY_APPROVAL:" + pending.getId(),
+                    NotificationService.RecipientTarget.ADMINS_ONLY
+            );
             return toDto(pending);
         }
 
@@ -305,6 +331,18 @@ public class RecoveryService {
         incident.setUpdatedAt(Instant.now());
         incidentRepository.save(incident);
 
+        notificationService.notifySafe(
+                NotificationType.RECOVERY_STARTED,
+                "INFO",
+                "Recovery Started: " + policy.actionType(),
+                "Executing " + policy.actionName() + " for Incident #" + incident.getId(),
+                incident.getAnomalyId(),
+                incident.getId(),
+                action.getId(),
+                "RECOVERY_STARTED:" + action.getId(),
+                NotificationService.RecipientTarget.ADMINS_AND_OPERATORS
+        );
+
         SafeActionExecutor.ExecutionResult execResult = safeActionExecutor.execute(
                 policy.actionType(), action.getTargetResource());
 
@@ -324,6 +362,17 @@ public class RecoveryService {
             auditService.record(username, "RECOVERY_FAILED", "RECOVERY_ACTION", action.getId().toString(),
                     "Execution failed: " + execResult.failureReason(), ip);
             eventBroadcastService.publish("RECOVERY_FAILED", toDto(action));
+            notificationService.notifySafe(
+                    NotificationType.RECOVERY_FAILED,
+                    "HIGH",
+                    "Recovery Execution Failed: " + policy.actionType(),
+                    execResult.failureReason() != null ? execResult.failureReason() : execResult.summary(),
+                    incident.getAnomalyId(),
+                    incident.getId(),
+                    action.getId(),
+                    "RECOVERY_FAILED:" + action.getId(),
+                    NotificationService.RecipientTarget.ADMINS_AND_OPERATORS
+            );
             return toDto(action);
         }
 
@@ -356,6 +405,17 @@ public class RecoveryService {
                 anomalyEventRepository.save(a);
             }
             eventBroadcastService.publish("RECOVERY_VERIFIED", toDto(action));
+            notificationService.notifySafe(
+                    NotificationType.RECOVERY_SUCCEEDED,
+                    "INFO",
+                    "Recovery Verified: " + policy.actionType(),
+                    outcome.evidence(),
+                    incident.getAnomalyId(),
+                    incident.getId(),
+                    action.getId(),
+                    "RECOVERY_VERIFIED:" + action.getId(),
+                    NotificationService.RecipientTarget.ADMINS_AND_OPERATORS
+            );
         } else {
             // Do NOT falsely resolve incident when verification fails
             action.setStatus("FAILED");
@@ -363,6 +423,17 @@ public class RecoveryService {
             incident.setStatus("OPEN");
             incident.setRecoveryStatus("FAILED");
             eventBroadcastService.publish("RECOVERY_FAILED", toDto(action));
+            notificationService.notifySafe(
+                    NotificationType.RECOVERY_FAILED,
+                    "HIGH",
+                    "Recovery Verification Failed: " + policy.actionType(),
+                    outcome.evidence(),
+                    incident.getAnomalyId(),
+                    incident.getId(),
+                    action.getId(),
+                    "RECOVERY_VERIFY_FAILED:" + action.getId(),
+                    NotificationService.RecipientTarget.ADMINS_AND_OPERATORS
+            );
         }
 
         incident.setUpdatedAt(Instant.now());
