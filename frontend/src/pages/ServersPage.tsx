@@ -1,24 +1,36 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
+  Activity,
+  AlertTriangle,
+  ArrowRight,
+  Container,
   Cpu,
   Edit3,
   Eye,
   HardDrive,
+  Layers,
+  Network,
   Plus,
   RefreshCw,
   Search,
   Server,
+  ShieldCheck,
   Terminal,
   Trash2,
   X,
 } from 'lucide-react';
+import apiClient from '../api/client';
 import { serversApi, ServerPayload } from '../api/servers';
 import { useAuth } from '../contexts/AuthContext';
-import { MonitoredServer } from '../types';
+import { Incident, MonitoredServer } from '../types';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { ErrorBanner } from '../components/ui/Banners';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { MetricBar } from '../components/ui/MetricBar';
+import { PageHeader } from '../components/ui/PageHeader';
+import { Toast } from '../components/ui/Toast';
 
 const EMPTY_FORM: ServerPayload = {
   hostName: '',
@@ -28,7 +40,20 @@ const EMPTY_FORM: ServerPayload = {
   status: 'ONLINE',
 };
 
+type SortKey = 'HOST' | 'CPU' | 'MEMORY' | 'DISK' | 'STATUS' | 'HEARTBEAT';
+
+function getHealthReasons(server: MonitoredServer): string[] {
+  const reasons: string[] = [];
+  if (server.status === 'OFFLINE') reasons.push('Node heartbeat is offline or unreachable.');
+  if (server.status === 'DEGRADED') reasons.push('Node is reporting a degraded operational state.');
+  if ((server.cpuUsage ?? 0) >= 85) reasons.push(`High CPU utilization (${server.cpuUsage}%).`);
+  if ((server.memoryUsage ?? 0) >= 85) reasons.push(`High Memory utilization (${server.memoryUsage}%).`);
+  if ((server.diskUsage ?? 0) >= 90) reasons.push(`Critical Disk utilization (${server.diskUsage}%).`);
+  return reasons;
+}
+
 export const ServersPage: React.FC = () => {
+  const navigate = useNavigate();
   const { isAdmin } = useAuth();
 
   const [servers, setServers] = useState<MonitoredServer[]>([]);
@@ -39,6 +64,17 @@ export const ServersPage: React.FC = () => {
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ONLINE' | 'DEGRADED' | 'OFFLINE'>('ALL');
+  const [sortBy, setSortBy] = useState<SortKey>('HOST');
+
+  // Operational & telemetry context (real backend endpoints)
+  const [collectorStatus, setCollectorStatus] = useState<any>(null);
+  const [latestTelemetry, setLatestTelemetry] = useState<any>(null);
+  const [processes, setProcesses] = useState<any[]>([]);
+  const [containers, setContainers] = useState<any[]>([]);
+  const [applications, setApplications] = useState<any[]>([]);
+  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [anomalies, setAnomalies] = useState<any[]>([]);
+  const [recoveries, setRecoveries] = useState<any[]>([]);
 
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingServer, setEditingServer] = useState<MonitoredServer | null>(null);
@@ -55,7 +91,36 @@ export const ServersPage: React.FC = () => {
       setIsRefreshing(true);
       const data = await serversApi.list();
       setServers(data);
+      setDetailServer((prev) => (prev ? data.find((s) => s.id === prev.id) ?? prev : null));
       setError(null);
+
+      // Load supporting real operational context without blocking the server list
+      const [colRes, telRes, procRes, ctrRes, appRes, incRes, anomRes, recRes] =
+        await Promise.allSettled([
+          apiClient.get('/monitoring/collector/status'),
+          apiClient.get('/monitoring/system/latest'),
+          apiClient.get('/monitoring/processes', { params: { limit: 8 } }),
+          apiClient.get('/monitoring/docker/containers'),
+          apiClient.get('/applications'),
+          apiClient.get('/incidents'),
+          apiClient.get('/anomalies'),
+          apiClient.get('/recovery/executions'),
+        ]);
+
+      if (colRes.status === 'fulfilled') setCollectorStatus(colRes.value.data?.data ?? null);
+      if (telRes.status === 'fulfilled') setLatestTelemetry(telRes.value.data?.data ?? null);
+      if (procRes.status === 'fulfilled') {
+        const d = procRes.value.data?.data;
+        setProcesses(Array.isArray(d) ? d : d?.processes ?? []);
+      }
+      if (ctrRes.status === 'fulfilled') {
+        const d = ctrRes.value.data?.data;
+        setContainers(Array.isArray(d) ? d : d?.containers ?? []);
+      }
+      if (appRes.status === 'fulfilled') setApplications(appRes.value.data?.data ?? []);
+      if (incRes.status === 'fulfilled') setIncidents(incRes.value.data?.data ?? []);
+      if (anomRes.status === 'fulfilled') setAnomalies(anomRes.value.data?.data ?? []);
+      if (recRes.status === 'fulfilled') setRecoveries(recRes.value.data?.data ?? []);
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Unable to load monitored servers from SHARP backend.');
     } finally {
@@ -68,8 +133,19 @@ export const ServersPage: React.FC = () => {
     fetchServers();
   }, [fetchServers]);
 
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (detailServer) setDetailServer(null);
+        else if (showFormModal && !submitting) setShowFormModal(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDownForModal(onKeyDown));
+    return () => window.removeEventListener('keydown', handleKeyDownForModal(onKeyDown));
+  }, [detailServer, showFormModal, submitting]);
+
   const filteredServers = useMemo(() => {
-    return servers.filter((s) => {
+    const list = servers.filter((s) => {
       if (statusFilter !== 'ALL' && s.status !== statusFilter) return false;
       if (search.trim()) {
         const q = search.toLowerCase();
@@ -78,7 +154,20 @@ export const ServersPage: React.FC = () => {
       }
       return true;
     });
-  }, [servers, search, statusFilter]);
+
+    return [...list].sort((a, b) => {
+      if (sortBy === 'CPU') return (b.cpuUsage ?? 0) - (a.cpuUsage ?? 0);
+      if (sortBy === 'MEMORY') return (b.memoryUsage ?? 0) - (a.memoryUsage ?? 0);
+      if (sortBy === 'DISK') return (b.diskUsage ?? 0) - (a.diskUsage ?? 0);
+      if (sortBy === 'STATUS') return (a.status || '').localeCompare(b.status || '');
+      if (sortBy === 'HEARTBEAT') {
+        const ta = a.lastSeen ? new Date(a.lastSeen).getTime() : 0;
+        const tb = b.lastSeen ? new Date(b.lastSeen).getTime() : 0;
+        return tb - ta;
+      }
+      return (a.hostName || '').localeCompare(b.hostName || '');
+    });
+  }, [servers, search, statusFilter, sortBy]);
 
   const openCreateModal = () => {
     setEditingServer(null);
@@ -155,57 +244,67 @@ export const ServersPage: React.FC = () => {
   };
 
   const hasFilters = search.trim() !== '' || statusFilter !== 'ALL';
+  const onlineCount = servers.filter((s) => s.status === 'ONLINE').length;
+  const degradedCount = servers.filter((s) => s.status === 'DEGRADED').length;
+  const offlineCount = servers.filter((s) => s.status === 'OFFLINE').length;
+
+  const detailHealthReasons = detailServer ? getHealthReasons(detailServer) : [];
+  const detailActiveIncidents = useMemo(() => {
+    if (!detailServer) return [];
+    return incidents.filter((inc) => !['RESOLVED', 'CLOSED'].includes(inc.status));
+  }, [detailServer, incidents]);
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-dark-800">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--text-main)] font-mono">
-            Infrastructure Registry
-          </h1>
-          <p className="text-xs text-[var(--text-muted)] mt-1">
-            Registered nodes, bare-metal / VM instances, and daemon connection status.
-          </p>
+      <PageHeader
+        title="Infrastructure Registry"
+        subtitle="Monitored host nodes, live telemetry state, health diagnostics, and connected infrastructure resources."
+        actions={
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={fetchServers}
+              disabled={isRefreshing}
+              className="sharp-btn-secondary"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-[#B0D4B8]' : ''}`} />
+              <span>Refresh</span>
+            </button>
+            <button type="button" onClick={openCreateModal} className="sharp-btn-primary">
+              <Plus className="w-4 h-4" />
+              <span>Register Host Node</span>
+            </button>
+          </div>
+        }
+      />
+
+      {error && <ErrorBanner message={error} onRetry={fetchServers} />}
+      {feedback && <Toast variant="success" message={feedback} onDismiss={() => setFeedback(null)} />}
+
+      {/* Summary Strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+        <div className="sharp-card p-3.5">
+          <div className="sharp-label">Total Nodes</div>
+          <div className="mt-1 text-xl font-semibold text-[var(--text-main)]">{servers.length}</div>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={fetchServers}
-            disabled={isRefreshing}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-dark-850 hover:bg-dark-800 border border-dark-700 text-xs text-[var(--text-secondary)] font-medium transition disabled:opacity-50"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-[#5D7B6F]' : ''}`} />
-            Refresh
-          </button>
-          <button
-            type="button"
-            onClick={openCreateModal}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#5D7B6F] hover:bg-[#4D685D] text-white text-xs font-medium shadow-md shadow-[#5D7B6F]/20 transition"
-          >
-            <Plus className="w-4 h-4" />
-            Register Host Node
-          </button>
+        <div className="sharp-card p-3.5">
+          <div className="sharp-label">Online</div>
+          <div className="mt-1 text-xl font-semibold text-[#B0D4B8]">{onlineCount}</div>
+        </div>
+        <div className="sharp-card p-3.5">
+          <div className="sharp-label">Degraded</div>
+          <div className="mt-1 text-xl font-semibold text-[#EAE7D6]">{degradedCount}</div>
+        </div>
+        <div className="sharp-card p-3.5">
+          <div className="sharp-label">Collector State</div>
+          <div className="mt-1 flex items-center gap-2">
+            <StatusBadge status={collectorStatus?.status || (offlineCount > 0 ? 'DEGRADED' : 'HEALTHY')} />
+          </div>
         </div>
       </div>
 
-      {error && <ErrorBanner message={error} onRetry={fetchServers} />}
-
-      {feedback && (
-        <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#B0D4B8]/10 border border-[#B0D4B8]/35 text-[#B0D4B8] text-xs font-mono">
-          <span>{feedback}</span>
-          <button
-            type="button"
-            onClick={() => setFeedback(null)}
-            className="p-1 rounded hover:bg-[#B0D4B8]/15"
-            aria-label="Dismiss feedback"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
-
-      {/* Search & Status Filter */}
-      <div className="bg-dark-900 border border-dark-700/80 rounded-xl p-4 shadow-lg flex flex-wrap items-center gap-3 text-xs font-mono">
+      {/* Search, Filter & Sort Bar */}
+      <div className="sharp-card p-4 flex flex-wrap items-center gap-3 text-xs">
         <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)]" />
           <input
@@ -214,19 +313,32 @@ export const ServersPage: React.FC = () => {
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search host name, IP, OS..."
             aria-label="Search servers"
-            className="w-full pl-8 pr-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-[var(--text-main)] placeholder-slate-600 focus:outline-none focus:border-[#5D7B6F]"
+            className="sharp-input w-full pl-8 pr-3 py-2"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'ONLINE' | 'DEGRADED' | 'OFFLINE')}
           aria-label="Filter servers by status"
-          className="px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-[var(--text-main)] focus:outline-none focus:border-[#5D7B6F]"
+          className="sharp-input px-3 py-2"
         >
           <option value="ALL">All Statuses</option>
           <option value="ONLINE">ONLINE</option>
           <option value="DEGRADED">DEGRADED</option>
           <option value="OFFLINE">OFFLINE</option>
+        </select>
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as SortKey)}
+          aria-label="Sort servers"
+          className="sharp-input px-3 py-2"
+        >
+          <option value="HOST">Sort: Hostname</option>
+          <option value="CPU">Sort: Highest CPU</option>
+          <option value="MEMORY">Sort: Highest Memory</option>
+          <option value="DISK">Sort: Highest Disk</option>
+          <option value="STATUS">Sort: Status</option>
+          <option value="HEARTBEAT">Sort: Last Heartbeat</option>
         </select>
         {hasFilters && (
           <button
@@ -235,7 +347,7 @@ export const ServersPage: React.FC = () => {
               setSearch('');
               setStatusFilter('ALL');
             }}
-            className="px-3 py-2 rounded-lg bg-[#5D7B6F]/15 border border-[#5D7B6F]/35 text-[#A4C3A2] hover:bg-[#5D7B6F]/25 transition"
+            className="sharp-btn-outline"
           >
             Reset
           </button>
@@ -247,14 +359,14 @@ export const ServersPage: React.FC = () => {
 
       {/* Servers Grid */}
       {loading ? (
-        <div className="text-center py-12 text-[var(--text-muted)] font-mono text-xs bg-dark-900 border border-dark-700/80 rounded-xl">
-          <RefreshCw className="w-4 h-4 animate-spin inline mr-2 text-[#5D7B6F]" />
+        <div className="sharp-card text-center py-12 text-[var(--text-muted)] text-xs">
+          <RefreshCw className="w-4 h-4 animate-spin inline mr-2 text-[#A4C3A2]" />
           Discovering registered infrastructure nodes...
         </div>
       ) : filteredServers.length === 0 ? (
-        <div className="bg-dark-900 border border-dark-700/80 rounded-xl">
+        <div className="sharp-card">
           <EmptyState
-            icon={<Server className="w-8 h-8" />}
+            icon={<Server className="w-6 h-6" />}
             title={hasFilters ? 'No matching host nodes' : 'No servers registered yet'}
             description={
               hasFilters
@@ -269,7 +381,7 @@ export const ServersPage: React.FC = () => {
                     setSearch('');
                     setStatusFilter('ALL');
                   }}
-                  className="px-3.5 py-2 rounded-lg text-xs font-mono bg-[#5D7B6F]/15 border border-[#5D7B6F]/35 text-[#A4C3A2] hover:bg-[#5D7B6F]/25 transition"
+                  className="sharp-btn-secondary"
                 >
                   Clear Filters
                 </button>
@@ -279,115 +391,96 @@ export const ServersPage: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredServers.map((server) => (
-            <div
-              key={server.id}
-              className="bg-dark-900 border border-dark-700/80 rounded-xl p-5 shadow-lg hover:border-dark-600 transition flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-3 gap-2">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="p-2 rounded-lg bg-dark-800 border border-dark-700 text-[#A4C3A2] shrink-0">
-                      <Server className="w-4 h-4" />
+          {filteredServers.map((server) => {
+            const reasons = getHealthReasons(server);
+            return (
+              <div
+                key={server.id}
+                className="sharp-card sharp-card-interactive p-5 flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-3 gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="p-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[#A4C3A2] shrink-0">
+                        <Server className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-semibold text-[var(--text-main)] truncate">
+                          {server.hostName}
+                        </h3>
+                        <p className="text-[11px] text-[var(--text-muted)]">{server.ipAddress}</p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <h3 className="text-sm font-semibold text-[var(--text-main)] font-mono truncate">
-                        {server.hostName}
-                      </h3>
-                      <p className="text-[11px] font-mono text-[var(--text-muted)]">{server.ipAddress}</p>
-                    </div>
-                  </div>
-                  <StatusBadge status={server.status} />
-                </div>
-
-                <div className="space-y-3 pt-3 border-t border-dark-800 text-xs">
-                  <div>
-                    <div className="flex justify-between text-[var(--text-muted)] mb-1 font-mono text-[11px]">
-                      <span className="flex items-center gap-1">
-                        <Cpu className="w-3 h-3 text-[#A4C3A2]" /> CPU Load
-                      </span>
-                      <span>{server.cpuUsage ?? 0}%</span>
-                    </div>
-                    <div className="w-full bg-dark-800 h-1.5 rounded-full overflow-hidden">
-                      <div
-                        className="bg-[#5D7B6F] h-full rounded-full"
-                        style={{ width: `${Math.min(100, server.cpuUsage ?? 0)}%` }}
-                      />
-                    </div>
+                    <StatusBadge status={server.status} />
                   </div>
 
-                  <div>
-                    <div className="flex justify-between text-[var(--text-muted)] mb-1 font-mono text-[11px]">
-                      <span className="flex items-center gap-1">
-                        <HardDrive className="w-3 h-3 text-[#D7F9FA]" /> Memory
-                      </span>
-                      <span>{server.memoryUsage ?? 0}%</span>
+                  {reasons.length > 0 && (
+                    <div className="mb-3 px-2.5 py-2 rounded-lg bg-[#EAE7D6]/10 border border-[#EAE7D6]/35 text-[11px] text-[#EAE7D6] flex items-start gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                      <span>{reasons[0]}</span>
                     </div>
-                    <div className="w-full bg-dark-800 h-1.5 rounded-full overflow-hidden">
-                      <div
-                        className="bg-[#D7F9FA] h-full rounded-full"
-                        style={{ width: `${Math.min(100, server.memoryUsage ?? 0)}%` }}
-                      />
-                    </div>
-                  </div>
+                  )}
 
-                  <div>
-                    <div className="flex justify-between text-[var(--text-muted)] mb-1 font-mono text-[11px]">
-                      <span className="flex items-center gap-1">
-                        <Terminal className="w-3 h-3 text-[#B0D4B8]" /> Disk
-                      </span>
-                      <span>{server.diskUsage ?? 0}%</span>
-                    </div>
-                    <div className="w-full bg-dark-800 h-1.5 rounded-full overflow-hidden">
-                      <div
-                        className="bg-[#B0D4B8] h-full rounded-full"
-                        style={{ width: `${Math.min(100, server.diskUsage ?? 0)}%` }}
-                      />
-                    </div>
+                  <div className="space-y-3 pt-3 border-t border-[var(--border-subtle)] text-xs">
+                    <MetricBar label="CPU Load" value={server.cpuUsage ?? 0} />
+                    <MetricBar label="Memory" value={server.memoryUsage ?? 0} color="bg-[#D7F9FA]" />
+                    <MetricBar label="Disk" value={server.diskUsage ?? 0} color="bg-[#B0D4B8]" />
                   </div>
                 </div>
-              </div>
 
-              <div className="pt-4 mt-4 border-t border-dark-800 space-y-3">
-                <div className="flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)]">
-                  <span className="truncate">OS: {server.osType}</span>
-                  <span className="shrink-0">Agent: v{server.agentVersion}</span>
-                </div>
+                <div className="pt-4 mt-4 border-t border-[var(--border-subtle)] space-y-3">
+                  <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)]">
+                    <span className="truncate">OS: {server.osType}</span>
+                    <span className="shrink-0">Agent: v{server.agentVersion}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)]">
+                    <span>
+                      Heartbeat:{' '}
+                      {server.lastSeen ? new Date(server.lastSeen).toLocaleTimeString() : 'Not reported'}
+                    </span>
+                    {latestTelemetry?.networkRxBytesPerSec != null && (
+                      <span className="inline-flex items-center gap-1 text-[#D7F9FA]">
+                        <Network className="w-3 h-3" />
+                        {(Number(latestTelemetry.networkRxBytesPerSec) / 1024).toFixed(1)} KB/s
+                      </span>
+                    )}
+                  </div>
 
-                <div className="flex items-center justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setDetailServer(server)}
-                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-dark-850 border border-dark-700 text-[11px] font-mono text-[var(--text-secondary)] hover:text-[#D7F9FA] hover:border-[#D7F9FA]/40 transition"
-                    title="View server details"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>Details</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => openEditModal(server)}
-                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-dark-850 border border-dark-700 text-[11px] font-mono text-[var(--text-secondary)] hover:text-[#A4C3A2] hover:border-[#5D7B6F]/40 transition"
-                    title="Edit server configuration"
-                  >
-                    <Edit3 className="w-3.5 h-3.5" />
-                    <span>Edit</span>
-                  </button>
-                  {isAdmin && (
+                  <div className="flex items-center justify-end gap-2">
                     <button
                       type="button"
-                      onClick={() => setDeletingServer(server)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#EAE7D6]/10 border border-[#EAE7D6]/30 text-[11px] font-mono text-[#EAE7D6] hover:bg-[#EAE7D6]/20 transition"
-                      title="Delete server"
+                      onClick={() => setDetailServer(server)}
+                      className="sharp-btn-secondary"
+                      title="View server details"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span>Delete</span>
+                      <Eye className="w-3.5 h-3.5 text-[#D7F9FA]" />
+                      <span>Details</span>
                     </button>
-                  )}
+                    <button
+                      type="button"
+                      onClick={() => openEditModal(server)}
+                      className="sharp-btn-secondary"
+                      title="Edit server configuration"
+                    >
+                      <Edit3 className="w-3.5 h-3.5 text-[#A4C3A2]" />
+                      <span>Edit</span>
+                    </button>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => setDeletingServer(server)}
+                        className="sharp-btn-danger !px-2.5 !py-1.5 text-[11px]"
+                        title="Delete server"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -398,9 +491,9 @@ export const ServersPage: React.FC = () => {
           role="dialog"
           aria-modal="true"
         >
-          <div className="bg-dark-900 border border-dark-700 rounded-xl p-6 max-w-md w-full shadow-2xl">
+          <div className="bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-xl p-6 max-w-md w-full shadow-[var(--shadow-elevated)]">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-[var(--text-main)] font-mono flex items-center gap-2">
+              <h2 className="text-base font-bold text-[var(--text-main)] flex items-center gap-2">
                 <Server className="w-5 h-5 text-[#A4C3A2]" />
                 {editingServer ? `Edit Host #${editingServer.id}` : 'Register Monitored Host'}
               </h2>
@@ -432,7 +525,7 @@ export const ServersPage: React.FC = () => {
                   required
                   value={formData.hostName}
                   onChange={(e) => setFormData({ ...formData, hostName: e.target.value })}
-                  className="w-full bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-[var(--text-main)] focus:outline-none focus:border-[#5D7B6F] font-mono"
+                  className="sharp-input w-full px-3 py-2"
                   placeholder="e.g. prod-node-03.infra.sharp"
                 />
               </div>
@@ -447,7 +540,7 @@ export const ServersPage: React.FC = () => {
                   required
                   value={formData.ipAddress}
                   onChange={(e) => setFormData({ ...formData, ipAddress: e.target.value })}
-                  className="w-full bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-[var(--text-main)] focus:outline-none focus:border-[#5D7B6F] font-mono"
+                  className="sharp-input w-full px-3 py-2"
                   placeholder="e.g. 192.168.1.10"
                 />
               </div>
@@ -461,7 +554,7 @@ export const ServersPage: React.FC = () => {
                   type="text"
                   value={formData.osType}
                   onChange={(e) => setFormData({ ...formData, osType: e.target.value })}
-                  className="w-full bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-[var(--text-main)] focus:outline-none focus:border-[#5D7B6F] font-mono"
+                  className="sharp-input w-full px-3 py-2"
                 />
               </div>
 
@@ -474,7 +567,7 @@ export const ServersPage: React.FC = () => {
                   type="text"
                   value={formData.agentVersion}
                   onChange={(e) => setFormData({ ...formData, agentVersion: e.target.value })}
-                  className="w-full bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-[var(--text-main)] focus:outline-none focus:border-[#5D7B6F] font-mono"
+                  className="sharp-input w-full px-3 py-2"
                 />
               </div>
 
@@ -492,7 +585,7 @@ export const ServersPage: React.FC = () => {
                         status: e.target.value as 'ONLINE' | 'DEGRADED' | 'OFFLINE',
                       })
                     }
-                    className="w-full bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-[var(--text-main)] focus:outline-none focus:border-[#5D7B6F] font-mono"
+                    className="sharp-input w-full px-3 py-2"
                   >
                     <option value="ONLINE">ONLINE</option>
                     <option value="DEGRADED">DEGRADED</option>
@@ -501,20 +594,16 @@ export const ServersPage: React.FC = () => {
                 </div>
               )}
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-dark-800">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[var(--border-subtle)]">
                 <button
                   type="button"
                   disabled={submitting}
                   onClick={() => setShowFormModal(false)}
-                  className="px-3 py-1.5 rounded-lg bg-dark-800 text-[var(--text-secondary)] hover:bg-dark-700 transition disabled:opacity-50"
+                  className="sharp-btn-secondary"
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-4 py-1.5 rounded-lg bg-[#5D7B6F] text-white font-medium hover:bg-[#4D685D] transition disabled:opacity-50"
-                >
+                <button type="submit" disabled={submitting} className="sharp-btn-primary">
                   {submitting
                     ? editingServer
                       ? 'Saving...'
@@ -529,74 +618,195 @@ export const ServersPage: React.FC = () => {
         </div>
       )}
 
-      {/* Detail Modal */}
+      {/* Comprehensive Infrastructure Detail Modal */}
       {detailServer && (
         <div
           className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50"
           role="dialog"
           aria-modal="true"
+          aria-label={`Server details for ${detailServer.hostName}`}
           onClick={() => setDetailServer(null)}
         >
           <div
-            className="bg-dark-900 border border-dark-700 rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4"
+            className="bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-xl p-6 max-w-2xl w-full max-h-[88vh] overflow-y-auto shadow-[var(--shadow-elevated)] space-y-5"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-dark-800 pb-3">
-              <div className="flex items-center gap-2">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
+              <div className="flex items-center gap-2.5">
                 <Server className="w-5 h-5 text-[#D7F9FA]" />
-                <h2 className="text-sm font-bold text-[var(--text-main)] font-mono">
-                  {detailServer.hostName}
-                </h2>
+                <div>
+                  <h2 className="text-base font-bold text-[var(--text-main)]">{detailServer.hostName}</h2>
+                  <p className="text-[11px] text-[var(--text-muted)]">
+                    Server #{detailServer.id} · {detailServer.ipAddress} · {detailServer.osType}
+                  </p>
+                </div>
               </div>
+              <div className="flex items-center gap-2">
+                <StatusBadge status={detailServer.status} />
+                <button
+                  type="button"
+                  onClick={() => setDetailServer(null)}
+                  className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-main)]"
+                  aria-label="Close server details"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Health Summary */}
+            <div
+              className={`p-3 rounded-lg border text-xs ${
+                detailHealthReasons.length > 0
+                  ? 'bg-[#EAE7D6]/12 border-[#EAE7D6]/45 text-[#EAE7D6]'
+                  : 'bg-[#B0D4B8]/12 border-[#B0D4B8]/35 text-[#B0D4B8]'
+              }`}
+            >
+              <div className="font-semibold mb-1">
+                {detailHealthReasons.length > 0 ? 'Health Degradation Factors' : 'Node Health Summary: Healthy'}
+              </div>
+              {detailHealthReasons.length > 0 ? (
+                <ul className="list-disc list-inside space-y-0.5 text-[11px]">
+                  {detailHealthReasons.map((r, i) => (
+                    <li key={i}>{r}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-[11px]">
+                  Host metrics and daemon heartbeat are within normal operating thresholds.
+                </p>
+              )}
+            </div>
+
+            {/* Overview & Metrics */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="p-3.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] space-y-2 text-xs">
+                <div className="sharp-label">Overview & Collector</div>
+                <dl className="grid grid-cols-2 gap-2">
+                  <div>
+                    <dt className="text-[10px] text-[var(--text-muted)]">Agent Version</dt>
+                    <dd className="text-[var(--text-main)] font-medium">v{detailServer.agentVersion}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[10px] text-[var(--text-muted)]">Collector</dt>
+                    <dd className="text-[var(--text-main)] font-medium">{collectorStatus?.status || 'ACTIVE'}</dd>
+                  </div>
+                  <div className="col-span-2">
+                    <dt className="text-[10px] text-[var(--text-muted)]">Last Heartbeat</dt>
+                    <dd className="text-[var(--text-secondary)]">
+                      {detailServer.lastSeen ? new Date(detailServer.lastSeen).toLocaleString() : '—'}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+
+              <div className="p-3.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] space-y-2.5 text-xs">
+                <div className="sharp-label">Resource Metrics</div>
+                <MetricBar label="CPU Load" value={detailServer.cpuUsage ?? 0} />
+                <MetricBar label="Memory" value={detailServer.memoryUsage ?? 0} color="bg-[#D7F9FA]" />
+                <MetricBar label="Disk" value={detailServer.diskUsage ?? 0} color="bg-[#B0D4B8]" />
+              </div>
+            </div>
+
+            {/* Infrastructure & Operational Summary */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
               <button
                 type="button"
-                onClick={() => setDetailServer(null)}
-                className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-main)]"
-                aria-label="Close server details"
+                onClick={() => {
+                  setDetailServer(null);
+                  navigate('/monitoring/processes');
+                }}
+                className="p-3 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[#A4C3A2]/50 text-left transition-colors"
               >
-                <X className="w-4 h-4" />
+                <div className="flex items-center justify-between text-[var(--text-muted)]">
+                  <Cpu className="w-3.5 h-3.5 text-[#A4C3A2]" />
+                  <ArrowRight className="w-3 h-3" />
+                </div>
+                <div className="mt-1.5 font-semibold text-[var(--text-main)]">{processes.length} Processes</div>
+                <div className="text-[10px] text-[var(--text-muted)]">View Processes</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setDetailServer(null);
+                  navigate('/monitoring/docker');
+                }}
+                className="p-3 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[#A4C3A2]/50 text-left transition-colors"
+              >
+                <div className="flex items-center justify-between text-[var(--text-muted)]">
+                  <Container className="w-3.5 h-3.5 text-[#D7F9FA]" />
+                  <ArrowRight className="w-3 h-3" />
+                </div>
+                <div className="mt-1.5 font-semibold text-[var(--text-main)]">{containers.length} Containers</div>
+                <div className="text-[10px] text-[var(--text-muted)]">View Docker</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setDetailServer(null);
+                  navigate('/applications');
+                }}
+                className="p-3 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[#A4C3A2]/50 text-left transition-colors"
+              >
+                <div className="flex items-center justify-between text-[var(--text-muted)]">
+                  <Layers className="w-3.5 h-3.5 text-[#B0D4B8]" />
+                  <ArrowRight className="w-3 h-3" />
+                </div>
+                <div className="mt-1.5 font-semibold text-[var(--text-main)]">{applications.length} Apps</div>
+                <div className="text-[10px] text-[var(--text-muted)]">View Services</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setDetailServer(null);
+                  navigate('/incidents');
+                }}
+                className="p-3 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[#A4C3A2]/50 text-left transition-colors"
+              >
+                <div className="flex items-center justify-between text-[var(--text-muted)]">
+                  <Activity className="w-3.5 h-3.5 text-[#EAE7D6]" />
+                  <ArrowRight className="w-3 h-3" />
+                </div>
+                <div className="mt-1.5 font-semibold text-[var(--text-main)]">{detailActiveIncidents.length} Active</div>
+                <div className="text-[10px] text-[var(--text-muted)]">Incidents</div>
               </button>
             </div>
-            <dl className="grid grid-cols-2 gap-3 text-xs font-mono">
-              <div>
-                <dt className="text-[var(--text-muted)]">Server ID</dt>
-                <dd className="text-[var(--text-main)]">#{detailServer.id}</dd>
+
+            {/* Operational Links */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-[var(--border-subtle)] text-xs">
+              <div className="text-[var(--text-muted)]">
+                Anomalies: <strong className="text-[var(--text-main)]">{anomalies.length}</strong> · Recovery
+                Executions: <strong className="text-[var(--text-main)]">{recoveries.length}</strong>
               </div>
-              <div>
-                <dt className="text-[var(--text-muted)]">Status</dt>
-                <dd><StatusBadge status={detailServer.status} /></dd>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDetailServer(null);
+                    navigate('/monitoring/system');
+                  }}
+                  className="sharp-btn-secondary"
+                >
+                  <HardDrive className="w-3.5 h-3.5" />
+                  <span>System Monitoring</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDetailServer(null);
+                    navigate('/recovery');
+                  }}
+                  className="sharp-btn-primary"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Recovery Console</span>
+                </button>
               </div>
-              <div>
-                <dt className="text-[var(--text-muted)]">IP Address</dt>
-                <dd className="text-[var(--text-main)]">{detailServer.ipAddress}</dd>
-              </div>
-              <div>
-                <dt className="text-[var(--text-muted)]">OS Type</dt>
-                <dd className="text-[var(--text-main)]">{detailServer.osType}</dd>
-              </div>
-              <div>
-                <dt className="text-[var(--text-muted)]">Agent Version</dt>
-                <dd className="text-[var(--text-main)]">v{detailServer.agentVersion}</dd>
-              </div>
-              <div>
-                <dt className="text-[var(--text-muted)]">CPU / Mem / Disk</dt>
-                <dd className="text-[var(--text-main)]">
-                  {detailServer.cpuUsage ?? 0}% / {detailServer.memoryUsage ?? 0}% / {detailServer.diskUsage ?? 0}%
-                </dd>
-              </div>
-              <div className="col-span-2">
-                <dt className="text-[var(--text-muted)]">Last Seen</dt>
-                <dd className="text-[var(--text-secondary)]">
-                  {detailServer.lastSeen ? new Date(detailServer.lastSeen).toLocaleString() : '—'}
-                </dd>
-              </div>
-              <div className="col-span-2">
-                <dt className="text-[var(--text-muted)]">Created At</dt>
-                <dd className="text-[var(--text-secondary)]">
-                  {detailServer.createdAt ? new Date(detailServer.createdAt).toLocaleString() : '—'}
-                </dd>
-              </div>
-            </dl>
+            </div>
           </div>
         </div>
       )}
@@ -617,3 +827,7 @@ export const ServersPage: React.FC = () => {
     </div>
   );
 };
+
+function handleKeyDownForModal(fn: (e: KeyboardEvent) => void) {
+  return fn;
+}

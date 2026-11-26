@@ -1,6 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { ServersPage } from '../pages/ServersPage';
 import { AuditPage } from '../pages/AuditPage';
 import { serversApi } from '../api/servers';
@@ -59,7 +60,11 @@ describe('Servers CRUD & Audit Pagination', () => {
     });
     (serversApi.remove as any).mockResolvedValue(undefined);
 
-    render(<ServersPage />);
+    render(
+      <MemoryRouter>
+        <ServersPage />
+      </MemoryRouter>
+    );
 
     await waitFor(() => {
       expect(screen.getByText('prod-node-01')).toBeInTheDocument();
@@ -94,7 +99,11 @@ describe('Servers CRUD & Audit Pagination', () => {
       .mockRejectedValueOnce({ response: { data: { message: 'Server registry down' } } })
       .mockResolvedValueOnce([]);
 
-    render(<ServersPage />);
+    render(
+      <MemoryRouter>
+        <ServersPage />
+      </MemoryRouter>
+    );
 
     await waitFor(() => {
       expect(screen.getByText('Server registry down')).toBeInTheDocument();
