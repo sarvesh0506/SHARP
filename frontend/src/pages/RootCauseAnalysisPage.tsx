@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import apiClient from '../api/client';
-import { Incident, RootCauseAnalysis } from '../types';
+import { Incident, RecoveryRecommendation, RootCauseAnalysis } from '../types';
 import { PageHeader } from '../components/ui/PageHeader';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { ErrorBanner } from '../components/ui/Banners';
@@ -29,6 +29,8 @@ export const RootCauseAnalysisPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [recommending, setRecommending] = useState(false);
+  const [generatedRec, setGeneratedRec] = useState<RecoveryRecommendation | null>(null);
+  const [recError, setRecError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
 
@@ -62,6 +64,8 @@ export const RootCauseAnalysisPage: React.FC = () => {
 
   useEffect(() => {
     if (selectedId != null) {
+      setGeneratedRec(null);
+      setRecError(null);
       fetchAnalyses(selectedId);
     }
   }, [selectedId, fetchAnalyses]);
@@ -95,13 +99,23 @@ export const RootCauseAnalysisPage: React.FC = () => {
     try {
       setRecommending(true);
       setError(null);
+      setRecError(null);
       setFeedback(null);
-      await apiClient.post(`/recovery/recommendations/incident/${selected.id}`, {
+      const res = await apiClient.post(`/recovery/recommendations/incident/${selected.id}`, {
         actionType: latestRca?.recommendedActionType || 'RUN_HEALTH_PROBE',
       });
-      setFeedback('Recovery recommendation generated and queued in Recovery Management.');
+      const rec: RecoveryRecommendation | undefined = res.data?.data;
+      if (rec) {
+        setGeneratedRec(rec);
+        setFeedback(`Recovery recommendation #${rec.id} (${rec.actionType}) created and queued in Recovery Management.`);
+      } else {
+        setFeedback('Recovery recommendation generated and queued in Recovery Management.');
+      }
+      await fetchIncidents();
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Failed to generate recovery recommendation.');
+      const msg = err?.response?.data?.message || 'Failed to generate recovery recommendation.';
+      setRecError(msg);
+      setError(msg);
     } finally {
       setRecommending(false);
     }
@@ -269,6 +283,7 @@ export const RootCauseAnalysisPage: React.FC = () => {
               </div>
 
               <button
+                type="button"
                 disabled={recommending}
                 onClick={handleCreateRecommendation}
                 className="w-full py-2 px-3 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-medium disabled:opacity-50 transition"
@@ -276,7 +291,33 @@ export const RootCauseAnalysisPage: React.FC = () => {
                 {recommending ? 'Generating...' : 'Generate Recovery Recommendation'}
               </button>
 
+              {recError && (
+                <div className="p-3 rounded-lg bg-[#F43F5E]/10 border border-[#F43F5E]/35 text-[#F43F5E] text-xs font-mono">
+                  {recError}
+                </div>
+              )}
+
+              {generatedRec && (
+                <div className="p-3 rounded-lg bg-[#34D399]/10 border border-[#34D399]/35 text-xs space-y-1.5">
+                  <div className="flex items-center justify-between font-mono">
+                    <span className="text-[#34D399] font-semibold">
+                      Recommendation #{generatedRec.id} Created
+                    </span>
+                    <span className="px-1.5 py-0.5 rounded bg-dark-900 border border-dark-700 text-[10px] text-slate-200">
+                      {generatedRec.riskLevel}
+                    </span>
+                  </div>
+                  <div className="font-mono text-[11px] text-slate-200">
+                    {generatedRec.actionType} · {generatedRec.status}
+                  </div>
+                  {generatedRec.expectedResult && (
+                    <p className="text-[11px] text-slate-400">{generatedRec.expectedResult}</p>
+                  )}
+                </div>
+              )}
+
               <button
+                type="button"
                 onClick={() => navigate('/recovery')}
                 className="w-full py-2 px-3 rounded-lg bg-dark-850 hover:bg-dark-800 border border-dark-700 text-slate-200 text-xs font-medium flex items-center justify-center gap-2 transition"
               >

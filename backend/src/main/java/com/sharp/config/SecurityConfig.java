@@ -50,6 +50,7 @@ public class SecurityConfig {
                                 "/api/v1/health/**",
                                 "/actuator/**",
                                 "/ws/**",
+                                "/ws-direct/**",
                                 "/h2-console/**"
                         ).permitAll()
                         // User-owned notifications (ownership enforced in NotificationService)
