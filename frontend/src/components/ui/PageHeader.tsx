@@ -19,24 +19,33 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   badge,
 }) => {
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-dark-800">
-      <div>
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-100 font-mono">{title}</h1>
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[var(--border-subtle)]">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="sharp-page-title">{title}</h1>
           {badge}
         </div>
-        {subtitle && <p className="text-xs text-slate-400 mt-1">{subtitle}</p>}
+        {subtitle && (
+          <p className="text-xs text-[var(--text-muted)] mt-1 leading-relaxed">
+            {subtitle}
+          </p>
+        )}
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-2.5 shrink-0">
         {actions}
         {onRefresh && (
           <button
+            type="button"
             onClick={onRefresh}
             disabled={isRefreshing}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-dark-850 hover:bg-dark-800 border border-dark-700 text-xs text-slate-300 font-medium transition disabled:opacity-50"
+            className="sharp-btn-secondary"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-[#A78BFA]' : ''}`} />
-            Refresh
+            <RefreshCw
+              className={`w-3.5 h-3.5 ${
+                isRefreshing ? 'animate-spin text-[#10B981] motion-reduce:animate-none' : ''
+              }`}
+            />
+            <span>Refresh</span>
           </button>
         )}
       </div>

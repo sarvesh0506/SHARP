@@ -9,12 +9,12 @@ export default {
     extend: {
       colors: {
         dark: {
-          950: '#0B1020',
-          900: '#151D32',
-          850: '#1B2540',
-          800: '#1B2540',
-          750: '#26324A',
-          700: '#26324A',
+          950: '#090C12',
+          900: '#121821',
+          850: '#192230',
+          800: '#192230',
+          750: '#1E293B',
+          700: '#1E293B',
           600: '#334155',
         },
         aurora: {
@@ -22,8 +22,8 @@ export default {
           sidebar: 'var(--bg-sidebar)',
           card: 'var(--bg-card)',
           elevated: 'var(--bg-elevated)',
-          violet: 'var(--accent-primary)',
-          'violet-hover': 'var(--accent-primary-hover)',
+          emerald: 'var(--accent-primary)',
+          'emerald-hover': 'var(--accent-primary-hover)',
           cyan: 'var(--accent-secondary)',
           success: 'var(--status-success)',
           warning: 'var(--status-warning)',
@@ -33,18 +33,21 @@ export default {
           border: 'var(--border-subtle)',
         },
         sharp: {
-          blue: '#7C3AED',
-          violet: '#7C3AED',
+          emerald: '#10B981',
+          blue: '#38BDF8',
           cyan: '#22D3EE',
-          emerald: '#34D399',
           amber: '#F59E0B',
           rose: '#F43F5E',
-          indigo: '#7C3AED',
+          violet: '#7C3AED',
         }
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+      },
+      boxShadow: {
+        surface: 'var(--shadow-surface)',
+        elevated: 'var(--shadow-elevated)',
       }
     },
   },

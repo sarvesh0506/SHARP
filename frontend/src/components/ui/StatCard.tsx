@@ -18,23 +18,25 @@ export const StatCard: React.FC<StatCardProps> = ({
   icon: Icon,
   trend,
   trendType = 'neutral',
-  color = 'text-[#7C3AED]',
+  color = 'text-[#34D399]',
 }) => {
   return (
-    <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-5 shadow-lg hover:border-[#334155] transition-all">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-medium text-[var(--text-muted)] tracking-wide uppercase">{title}</span>
-        <div className={`p-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] ${color}`}>
-          <Icon className="w-5 h-5" />
+    <div className="sharp-card sharp-card-interactive p-4 sm:p-5">
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <span className="sharp-label truncate">{title}</span>
+        <div
+          className={`p-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] shrink-0 ${color}`}
+        >
+          <Icon className="w-4 h-4" />
         </div>
       </div>
-      <div className="flex items-baseline justify-between">
-        <div className="text-2xl font-bold font-mono tracking-tight text-[var(--text-main)]">{value}</div>
+      <div className="flex items-baseline justify-between gap-2">
+        <div className="sharp-kpi-value truncate">{value}</div>
         {trend && (
           <span
-            className={`text-xs font-semibold px-2 py-0.5 rounded border ${
+            className={`text-[11px] font-mono font-medium px-2 py-0.5 rounded-md border shrink-0 ${
               trendType === 'positive'
-                ? 'bg-[#34D399]/10 text-[#34D399] border-[#34D399]/30'
+                ? 'bg-[#10B981]/10 text-[#34D399] border-[#10B981]/30'
                 : trendType === 'negative'
                 ? 'bg-[#F43F5E]/10 text-[#F43F5E] border-[#F43F5E]/30'
                 : 'bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]'
@@ -44,7 +46,11 @@ export const StatCard: React.FC<StatCardProps> = ({
           </span>
         )}
       </div>
-      {subtitle && <p className="text-xs text-[var(--text-muted)] mt-2 font-mono">{subtitle}</p>}
+      {subtitle && (
+        <p className="text-[11px] text-[var(--text-muted)] mt-2 font-mono truncate">
+          {subtitle}
+        </p>
+      )}
     </div>
   );
 };
