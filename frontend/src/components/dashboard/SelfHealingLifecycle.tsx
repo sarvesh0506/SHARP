@@ -131,27 +131,27 @@ export const SelfHealingLifecycle: React.FC<SelfHealingLifecycleProps> = ({
     switch (state) {
       case 'healthy':
         return {
-          border: 'border-[#10B981]/35',
-          iconBg: 'bg-[#10B981]/12 text-[#34D399] border-[#10B981]/30',
-          dot: 'bg-[#34D399]',
+          border: 'border-[#5D7B6F]/35',
+          iconBg: 'bg-[#5D7B6F]/12 text-[#B0D4B8] border-[#5D7B6F]/30',
+          dot: 'bg-[#B0D4B8]',
         };
       case 'warning':
         return {
-          border: 'border-[#F59E0B]/35',
-          iconBg: 'bg-[#F59E0B]/12 text-[#F59E0B] border-[#F59E0B]/30',
-          dot: 'bg-[#F59E0B]',
+          border: 'border-[#EAE7D6]/35',
+          iconBg: 'bg-[#EAE7D6]/12 text-[#EAE7D6] border-[#EAE7D6]/30',
+          dot: 'bg-[#EAE7D6]',
         };
       case 'active':
         return {
-          border: 'border-[#38BDF8]/35',
-          iconBg: 'bg-[#38BDF8]/12 text-[#38BDF8] border-[#38BDF8]/30',
-          dot: 'bg-[#38BDF8]',
+          border: 'border-[#D7F9FA]/35',
+          iconBg: 'bg-[#D7F9FA]/12 text-[#D7F9FA] border-[#D7F9FA]/30',
+          dot: 'bg-[#D7F9FA]',
         };
       default:
         return {
           border: 'border-[var(--border-subtle)]',
           iconBg: 'bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]',
-          dot: 'bg-[#475569]',
+          dot: 'bg-[#6A7F72]',
         };
     }
   };
@@ -169,7 +169,7 @@ export const SelfHealingLifecycle: React.FC<SelfHealingLifecycleProps> = ({
         </div>
         <Link
           to="/recovery"
-          className="text-xs font-mono text-[#34D399] hover:underline inline-flex items-center gap-1"
+          className="text-xs font-mono text-[#B0D4B8] hover:underline inline-flex items-center gap-1"
         >
           <span>Recovery Console</span>
           <ArrowRight className="w-3 h-3" />
@@ -188,7 +188,7 @@ export const SelfHealingLifecycle: React.FC<SelfHealingLifecycleProps> = ({
             >
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono text-[#64748B]">{stage.step}</span>
+                  <span className="text-[10px] font-mono text-[#7D8F82]">{stage.step}</span>
                   <span className="text-[11px] font-mono font-semibold tracking-wider text-[var(--text-main)]">
                     {stage.label}
                   </span>
@@ -211,7 +211,7 @@ export const SelfHealingLifecycle: React.FC<SelfHealingLifecycleProps> = ({
               {idx < stages.length - 1 && (
                 <ArrowRight
                   aria-hidden="true"
-                  className="hidden xl:block w-3.5 h-3.5 text-[#475569] absolute -right-2.5 top-1/2 -translate-y-1/2 z-10 bg-[var(--bg-card)] rounded-full"
+                  className="hidden xl:block w-3.5 h-3.5 text-[#6A7F72] absolute -right-2.5 top-1/2 -translate-y-1/2 z-10 bg-[var(--bg-card)] rounded-full"
                 />
               )}
             </Link>

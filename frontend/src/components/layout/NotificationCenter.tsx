@@ -15,12 +15,12 @@ import { ConfirmDialog } from '../ui/ConfirmDialog';
 const getSeverityAccent = (severity: string) => {
   const s = (severity || '').toUpperCase();
   if (s === 'CRITICAL' || s === 'HIGH') {
-    return 'bg-[#F43F5E]/15 text-[#F43F5E] border-[#F43F5E]/35';
+    return 'bg-[#EAE7D6]/15 text-[#EAE7D6] border-[#EAE7D6]/35';
   }
   if (s === 'MEDIUM' || s === 'WARNING') {
-    return 'bg-[#F59E0B]/15 text-[#F59E0B] border-[#F59E0B]/35';
+    return 'bg-[#EAE7D6]/15 text-[#EAE7D6] border-[#EAE7D6]/35';
   }
-  return 'bg-[#22D3EE]/15 text-[#22D3EE] border-[#22D3EE]/35';
+  return 'bg-[#D7F9FA]/15 text-[#D7F9FA] border-[#D7F9FA]/35';
 };
 
 const formatRelativeTime = (iso: string) => {
@@ -207,11 +207,11 @@ export const NotificationCenter: React.FC = () => {
         aria-label="Open notification center"
         aria-expanded={open}
         aria-haspopup="dialog"
-        className="relative p-2 text-[var(--text-muted)] hover:text-[#10B981] hover:bg-[var(--bg-elevated)] rounded-lg border border-transparent hover:border-[var(--border-subtle)] transition-colors"
+        className="relative p-2 text-[var(--text-muted)] hover:text-[#5D7B6F] hover:bg-[var(--bg-elevated)] rounded-lg border border-transparent hover:border-[var(--border-subtle)] transition-colors"
       >
         <Bell className="w-4 h-4" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#F43F5E] text-white text-[10px] font-mono font-bold flex items-center justify-center shadow">
+          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#EAE7D6] text-[#0D1311] text-[10px] font-mono font-bold flex items-center justify-center shadow">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
@@ -227,7 +227,7 @@ export const NotificationCenter: React.FC = () => {
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-[var(--text-main)]">Notifications</span>
               {unreadCount > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-[#F43F5E]/15 text-[#F43F5E] border border-[#F43F5E]/30">
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-[#EAE7D6]/15 text-[#EAE7D6] border border-[#EAE7D6]/30">
                   {unreadCount} unread
                 </span>
               )}
@@ -237,7 +237,7 @@ export const NotificationCenter: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleMarkAllRead}
-                  className="inline-flex items-center gap-1 text-[#38BDF8] hover:underline"
+                  className="inline-flex items-center gap-1 text-[#D7F9FA] hover:underline"
                 >
                   <CheckCheck className="w-3.5 h-3.5" />
                   <span>Read all</span>
@@ -247,7 +247,7 @@ export const NotificationCenter: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setConfirmClearOpen(true)}
-                  className="text-[var(--text-muted)] hover:text-[#F43F5E]"
+                  className="text-[var(--text-muted)] hover:text-[#EAE7D6]"
                   title="Clear all notifications"
                 >
                   Clear
@@ -263,7 +263,7 @@ export const NotificationCenter: React.FC = () => {
                 onClick={() => setFilterTab('ALL')}
                 className={`px-2.5 py-1 rounded-md transition ${
                   filterTab === 'ALL'
-                    ? 'bg-[#10B981]/15 text-[#34D399] border border-[#10B981]/35'
+                    ? 'bg-[#5D7B6F]/15 text-[#B0D4B8] border border-[#5D7B6F]/35'
                     : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                 }`}
               >
@@ -274,7 +274,7 @@ export const NotificationCenter: React.FC = () => {
                 onClick={() => setFilterTab('UNREAD')}
                 className={`px-2.5 py-1 rounded-md transition ${
                   filterTab === 'UNREAD'
-                    ? 'bg-[#10B981]/15 text-[#34D399] border border-[#10B981]/35'
+                    ? 'bg-[#5D7B6F]/15 text-[#B0D4B8] border border-[#5D7B6F]/35'
                     : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                 }`}
               >
@@ -287,7 +287,7 @@ export const NotificationCenter: React.FC = () => {
                 setOpen(false);
                 navigate('/notifications');
               }}
-              className="inline-flex items-center gap-1 text-[#10B981] hover:text-[#34D399] hover:underline"
+              className="inline-flex items-center gap-1 text-[#5D7B6F] hover:text-[#B0D4B8] hover:underline"
             >
               <span>View all</span>
               <ExternalLink className="w-3 h-3" />
@@ -295,7 +295,7 @@ export const NotificationCenter: React.FC = () => {
           </div>
 
           {error && (
-            <div className="px-4 py-2 bg-[#F43F5E]/10 border-b border-[#F43F5E]/30 text-[11px] text-[#F43F5E]">
+            <div className="px-4 py-2 bg-[#EAE7D6]/10 border-b border-[#EAE7D6]/30 text-[11px] text-[#EAE7D6]">
               {error}
             </div>
           )}
@@ -303,7 +303,7 @@ export const NotificationCenter: React.FC = () => {
           <div className="max-h-[360px] overflow-y-auto divide-y divide-[var(--border-subtle)]">
             {loading ? (
               <div className="py-10 flex flex-col items-center justify-center gap-2 text-xs font-mono text-[var(--text-muted)]">
-                <div className="w-5 h-5 border-2 border-[#10B981] border-t-transparent rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-[#5D7B6F] border-t-transparent rounded-full animate-spin" />
                 <span>Loading notifications...</span>
               </div>
             ) : items.length === 0 ? (
@@ -319,7 +319,7 @@ export const NotificationCenter: React.FC = () => {
                   <div
                     key={item.id}
                     className={`p-3.5 transition-colors ${
-                      item.read ? 'bg-transparent' : 'bg-[#10B981]/[0.05]'
+                      item.read ? 'bg-transparent' : 'bg-[#5D7B6F]/[0.05]'
                     } hover:bg-[var(--bg-hover)]`}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -331,7 +331,7 @@ export const NotificationCenter: React.FC = () => {
                       >
                         <div className="flex items-center gap-2 mb-1">
                           {!item.read && (
-                            <span className="w-2 h-2 rounded-full bg-[#22D3EE] shrink-0" />
+                            <span className="w-2 h-2 rounded-full bg-[#D7F9FA] shrink-0" />
                           )}
                           <span
                             className={`px-1.5 py-0.5 rounded text-[10px] font-mono border ${getSeverityAccent(
@@ -340,19 +340,19 @@ export const NotificationCenter: React.FC = () => {
                           >
                             {item.severity}
                           </span>
-                          <span className="text-[10px] font-mono text-slate-500 truncate">
+                          <span className="text-[10px] font-mono text-[var(--text-muted)] truncate">
                             {item.type}
                           </span>
                         </div>
-                        <div className="text-xs font-semibold text-slate-100 truncate">
+                        <div className="text-xs font-semibold text-[var(--text-main)] truncate">
                           {item.title}
                         </div>
                         {item.message && (
-                          <p className="text-[11px] text-slate-400 line-clamp-2 mt-0.5">
+                          <p className="text-[11px] text-[var(--text-muted)] line-clamp-2 mt-0.5">
                             {item.message}
                           </p>
                         )}
-                        <div className="text-[10px] font-mono text-slate-500 mt-1">
+                        <div className="text-[10px] font-mono text-[var(--text-muted)] mt-1">
                           {formatRelativeTime(item.createdAt)}
                         </div>
                       </div>
@@ -363,7 +363,7 @@ export const NotificationCenter: React.FC = () => {
                             type="button"
                             onClick={() => handleMarkAsRead(item)}
                             title="Mark as read"
-                            className="p-1 rounded text-slate-400 hover:text-[#34D399] hover:bg-dark-800 transition"
+                            className="p-1 rounded text-[var(--text-muted)] hover:text-[#B0D4B8] hover:bg-dark-800 transition"
                           >
                             <Check className="w-3.5 h-3.5" />
                           </button>
@@ -372,7 +372,7 @@ export const NotificationCenter: React.FC = () => {
                           type="button"
                           onClick={() => handleDelete(item)}
                           title="Delete notification"
-                          className="p-1 rounded text-slate-500 hover:text-[#F43F5E] hover:bg-dark-800 transition"
+                          className="p-1 rounded text-[var(--text-muted)] hover:text-[#EAE7D6] hover:bg-dark-800 transition"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

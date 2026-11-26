@@ -18,7 +18,7 @@ export const StatCard: React.FC<StatCardProps> = ({
   icon: Icon,
   trend,
   trendType = 'neutral',
-  color = 'text-[#34D399]',
+  color = 'text-[#B0D4B8]',
 }) => {
   return (
     <div className="sharp-card sharp-card-interactive p-4 sm:p-5">
@@ -36,9 +36,9 @@ export const StatCard: React.FC<StatCardProps> = ({
           <span
             className={`text-[11px] font-mono font-medium px-2 py-0.5 rounded-md border shrink-0 ${
               trendType === 'positive'
-                ? 'bg-[#10B981]/10 text-[#34D399] border-[#10B981]/30'
+                ? 'bg-[#5D7B6F]/10 text-[#B0D4B8] border-[#5D7B6F]/30'
                 : trendType === 'negative'
-                ? 'bg-[#F43F5E]/10 text-[#F43F5E] border-[#F43F5E]/30'
+                ? 'bg-[#EAE7D6]/10 text-[#EAE7D6] border-[#EAE7D6]/30'
                 : 'bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]'
             }`}
           >

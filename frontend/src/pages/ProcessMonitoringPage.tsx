@@ -58,7 +58,7 @@ export const ProcessMonitoringPage: React.FC = () => {
 
   const SortHeader: React.FC<{ col: typeof sortBy; label: string }> = ({ col, label }) => (
     <th
-      className="py-3.5 px-4 cursor-pointer select-none hover:text-slate-200 transition"
+      className="py-3.5 px-4 cursor-pointer select-none hover:text-[var(--text-main)] transition"
       onClick={() => toggleSort(col)}
     >
       <span className="flex items-center gap-1">
@@ -85,35 +85,35 @@ export const ProcessMonitoringPage: React.FC = () => {
           value={data?.totalHostProcessesSampled ?? data?.totalElements ?? 0}
           subtitle={data?.collectedAt ? `Sampled ${new Date(data.collectedAt).toLocaleTimeString()}` : 'Awaiting sample'}
           icon={Terminal}
-          color="text-[#22D3EE]"
+          color="text-[#D7F9FA]"
         />
         <StatCard
           title="Matching Filter"
           value={data?.totalElements ?? 0}
           subtitle={`Page ${(data?.page ?? 0) + 1} of ${Math.max(1, data?.totalPages ?? 1)}`}
           icon={Cpu}
-          color="text-[#A78BFA]"
+          color="text-[#A4C3A2]"
         />
         <StatCard
           title="Top CPU (Current Page)"
           value={topCpu?.processName ?? 'N/A'}
           subtitle={topCpu?.cpuPercent != null ? `${topCpu.cpuPercent.toFixed(1)}% CPU` : 'Awaiting delta'}
           icon={AlertCircle}
-          color="text-[#F59E0B]"
+          color="text-[#EAE7D6]"
         />
         <StatCard
           title="Top Memory (Current Page)"
           value={topMem?.processName ?? 'N/A'}
           subtitle={topMem?.memoryBytes != null ? `${(topMem.memoryBytes / (1024 * 1024)).toFixed(1)} MB` : 'N/A'}
           icon={Cpu}
-          color="text-[#34D399]"
+          color="text-[#B0D4B8]"
         />
       </div>
 
       {/* Search & Status Filter */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[220px] max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
           <input
             type="text"
             value={search}
@@ -122,7 +122,7 @@ export const ProcessMonitoringPage: React.FC = () => {
               setSearch(e.target.value);
             }}
             placeholder="Search by process name or PID..."
-            className="w-full pl-9 pr-4 py-2 rounded-lg bg-dark-850 border border-dark-700 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-[#7C3AED] font-mono"
+            className="w-full pl-9 pr-4 py-2 rounded-lg bg-dark-850 border border-dark-700 text-xs text-[var(--text-main)] placeholder-slate-600 focus:outline-none focus:border-[#5D7B6F] font-mono"
           />
         </div>
 
@@ -133,7 +133,7 @@ export const ProcessMonitoringPage: React.FC = () => {
             setStatusFilter(e.target.value);
           }}
           aria-label="Filter by process state"
-          className="px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-xs text-slate-200 font-mono focus:outline-none focus:border-[#7C3AED]"
+          className="px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-xs text-[var(--text-main)] font-mono focus:outline-none focus:border-[#5D7B6F]"
         >
           <option value="ALL">All States</option>
           <option value="RUNNING">RUNNING</option>
@@ -142,7 +142,7 @@ export const ProcessMonitoringPage: React.FC = () => {
           <option value="OTHER">OTHER</option>
         </select>
 
-        <span className="text-xs text-slate-500 font-mono ml-auto">
+        <span className="text-xs text-[var(--text-muted)] font-mono ml-auto">
           Showing {items.length} of {data?.totalElements ?? 0} processes
         </span>
       </div>
@@ -150,8 +150,8 @@ export const ProcessMonitoringPage: React.FC = () => {
       {/* Process Table */}
       <div className="bg-dark-900 border border-dark-700/80 rounded-xl overflow-hidden shadow-lg">
         {loading && !data ? (
-          <div className="p-12 text-center text-slate-500 font-mono text-xs">
-            <RefreshCw className="w-4 h-4 animate-spin inline mr-2 text-[#22D3EE]" />
+          <div className="p-12 text-center text-[var(--text-muted)] font-mono text-xs">
+            <RefreshCw className="w-4 h-4 animate-spin inline mr-2 text-[#D7F9FA]" />
             Loading live OS process list...
           </div>
         ) : !data?.available || items.length === 0 ? (
@@ -167,7 +167,7 @@ export const ProcessMonitoringPage: React.FC = () => {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-dark-850 border-b border-dark-700/80 text-slate-400 uppercase font-mono tracking-wider text-[11px]">
+              <thead className="bg-dark-850 border-b border-dark-700/80 text-[var(--text-muted)] uppercase font-mono tracking-wider text-[11px]">
                 <tr>
                   <SortHeader col="pid" label="PID" />
                   <SortHeader col="name" label="Process Name" />
@@ -178,17 +178,17 @@ export const ProcessMonitoringPage: React.FC = () => {
                   <th className="py-3.5 px-4">Start Time</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-dark-800 text-slate-300 font-mono text-[11px]">
+              <tbody className="divide-y divide-dark-800 text-[var(--text-secondary)] font-mono text-[11px]">
                 {items.map((p) => {
                   const cpu = p.cpuPercent ?? 0;
                   const memMb = p.memoryBytes != null ? (p.memoryBytes / (1024 * 1024)).toFixed(1) : 'N/A';
                   return (
                     <tr key={`${p.pid}-${p.processName}`} className="hover:bg-dark-850/60 transition">
-                      <td className="py-3 px-4 text-slate-500">{p.pid}</td>
+                      <td className="py-3 px-4 text-[var(--text-muted)]">{p.pid}</td>
                       <td className="py-3 px-4">
-                        <div className="text-slate-200 font-semibold">{p.processName}</div>
+                        <div className="text-[var(--text-main)] font-semibold">{p.processName}</div>
                         {p.executablePath && (
-                          <div className="text-[10px] text-slate-500 truncate max-w-xs" title={p.executablePath}>
+                          <div className="text-[10px] text-[var(--text-muted)] truncate max-w-xs" title={p.executablePath}>
                             {p.executablePath}
                           </div>
                         )}
@@ -196,25 +196,25 @@ export const ProcessMonitoringPage: React.FC = () => {
                       <td className="py-3 px-4">
                         <span
                           className={`font-bold ${
-                            cpu > 25 ? 'text-[#F43F5E]' : cpu > 10 ? 'text-[#F59E0B]' : 'text-[#22D3EE]'
+                            cpu > 25 ? 'text-[#EAE7D6]' : cpu > 10 ? 'text-[#EAE7D6]' : 'text-[#D7F9FA]'
                           }`}
                         >
                           {p.cpuPercent != null ? `${cpu.toFixed(1)}%` : 'N/A'}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-slate-300">
+                      <td className="py-3 px-4 text-[var(--text-secondary)]">
                         {memMb} MB{' '}
                         {p.memoryPercent != null && (
-                          <span className="text-slate-500">({p.memoryPercent.toFixed(1)}%)</span>
+                          <span className="text-[var(--text-muted)]">({p.memoryPercent.toFixed(1)}%)</span>
                         )}
                       </td>
                       <td className="py-3 px-4">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#34D399]/10 text-[#34D399] border border-[#34D399]/30">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#B0D4B8]/10 text-[#B0D4B8] border border-[#B0D4B8]/30">
                           {p.status}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-slate-400">{p.userName || 'System / Restricted'}</td>
-                      <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
+                      <td className="py-3 px-4 text-[var(--text-muted)]">{p.userName || 'System / Restricted'}</td>
+                      <td className="py-3 px-4 text-[var(--text-muted)] whitespace-nowrap">
                         {p.startTime ? new Date(p.startTime).toLocaleTimeString() : 'N/A'}
                       </td>
                     </tr>
@@ -228,21 +228,21 @@ export const ProcessMonitoringPage: React.FC = () => {
         {/* Pagination */}
         {data && data.totalPages > 1 && (
           <div className="p-3 bg-dark-850 border-t border-dark-700 flex items-center justify-between text-xs font-mono">
-            <span className="text-slate-400">
+            <span className="text-[var(--text-muted)]">
               Page {data.page + 1} of {data.totalPages}
             </span>
             <div className="flex gap-2">
               <button
                 disabled={data.page <= 0}
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
-                className="px-2.5 py-1 rounded bg-dark-900 border border-dark-700 text-slate-300 disabled:opacity-40 flex items-center gap-1"
+                className="px-2.5 py-1 rounded bg-dark-900 border border-dark-700 text-[var(--text-secondary)] disabled:opacity-40 flex items-center gap-1"
               >
                 <ChevronLeft className="w-3.5 h-3.5" /> Prev
               </button>
               <button
                 disabled={data.page >= data.totalPages - 1}
                 onClick={() => setPage((p) => p + 1)}
-                className="px-2.5 py-1 rounded bg-dark-900 border border-dark-700 text-slate-300 disabled:opacity-40 flex items-center gap-1"
+                className="px-2.5 py-1 rounded bg-dark-900 border border-dark-700 text-[var(--text-secondary)] disabled:opacity-40 flex items-center gap-1"
               >
                 Next <ChevronRight className="w-3.5 h-3.5" />
               </button>

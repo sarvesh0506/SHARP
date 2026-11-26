@@ -23,7 +23,7 @@ export const AppLayout: React.FC = () => {
       <div className="min-h-screen w-full bg-[var(--bg-main)] flex flex-col items-center justify-center gap-4 text-[var(--text-muted)] font-mono text-sm">
         <SharpLogo variant="loading" />
         <div className="flex items-center gap-3">
-          <div className="w-5 h-5 border-2 border-[#10B981] border-t-transparent rounded-full animate-spin motion-reduce:animate-none" />
+          <div className="w-5 h-5 border-2 border-[#5D7B6F] border-t-transparent rounded-full animate-spin motion-reduce:animate-none" />
           Initializing SHARP Core...
         </div>
       </div>

@@ -32,12 +32,12 @@ const NOTIFICATION_TYPES = [
 const getSeverityBadge = (severity: string) => {
   const s = (severity || '').toUpperCase();
   if (s === 'CRITICAL' || s === 'HIGH') {
-    return 'bg-[#F43F5E]/10 text-[#F43F5E] border-[#F43F5E]/30';
+    return 'bg-[#EAE7D6]/10 text-[#EAE7D6] border-[#EAE7D6]/30';
   }
   if (s === 'MEDIUM' || s === 'WARNING') {
-    return 'bg-[#F59E0B]/10 text-[#F59E0B] border-[#F59E0B]/30';
+    return 'bg-[#EAE7D6]/10 text-[#EAE7D6] border-[#EAE7D6]/30';
   }
-  return 'bg-[#22D3EE]/10 text-[#22D3EE] border-[#22D3EE]/30';
+  return 'bg-[#D7F9FA]/10 text-[#D7F9FA] border-[#D7F9FA]/30';
 };
 
 const resolveRoute = (n: NotificationItem): string | null => {
@@ -165,7 +165,7 @@ export const NotificationsPage: React.FC = () => {
               setPage(0);
             }}
             aria-label="Filter by read status"
-            className="px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-slate-200 focus:outline-none focus:border-[#7C3AED]"
+            className="px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-[var(--text-main)] focus:outline-none focus:border-[#5D7B6F]"
           >
             <option value="ALL">All Notifications</option>
             <option value="UNREAD">Unread Only</option>
@@ -179,7 +179,7 @@ export const NotificationsPage: React.FC = () => {
               setPage(0);
             }}
             aria-label="Filter by notification type"
-            className="px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-slate-200 focus:outline-none focus:border-[#7C3AED]"
+            className="px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-[var(--text-main)] focus:outline-none focus:border-[#5D7B6F]"
           >
             {NOTIFICATION_TYPES.map((t) => (
               <option key={t} value={t}>
@@ -196,7 +196,7 @@ export const NotificationsPage: React.FC = () => {
                 setTypeFilter('ALL');
                 setPage(0);
               }}
-              className="px-3 py-2 rounded-lg bg-[#7C3AED]/15 border border-[#7C3AED]/35 text-[#A78BFA] hover:bg-[#7C3AED]/25 transition"
+              className="px-3 py-2 rounded-lg bg-[#5D7B6F]/15 border border-[#5D7B6F]/35 text-[#A4C3A2] hover:bg-[#5D7B6F]/25 transition"
             >
               Reset
             </button>
@@ -208,7 +208,7 @@ export const NotificationsPage: React.FC = () => {
             type="button"
             disabled={unreadCount === 0}
             onClick={handleMarkAllRead}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#22D3EE]/10 border border-[#22D3EE]/30 text-[#22D3EE] hover:bg-[#22D3EE]/20 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#D7F9FA]/10 border border-[#D7F9FA]/30 text-[#D7F9FA] hover:bg-[#D7F9FA]/20 disabled:opacity-40 disabled:cursor-not-allowed transition"
           >
             <CheckCheck className="w-3.5 h-3.5" />
             <span>Mark All Read</span>
@@ -218,7 +218,7 @@ export const NotificationsPage: React.FC = () => {
             type="button"
             disabled={pageData.totalElements === 0}
             onClick={() => setConfirmClearOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#F43F5E]/10 border border-[#F43F5E]/30 text-[#F43F5E] hover:bg-[#F43F5E]/20 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#EAE7D6]/10 border border-[#EAE7D6]/30 text-[#EAE7D6] hover:bg-[#EAE7D6]/20 disabled:opacity-40 disabled:cursor-not-allowed transition"
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span>Clear All</span>
@@ -229,8 +229,8 @@ export const NotificationsPage: React.FC = () => {
       {/* Notifications List */}
       <div className="bg-dark-900 border border-dark-700/80 rounded-xl overflow-hidden shadow-lg">
         {loading ? (
-          <div className="p-12 flex flex-col items-center justify-center gap-3 text-xs font-mono text-slate-400">
-            <div className="w-7 h-7 border-2 border-[#22D3EE] border-t-transparent rounded-full animate-spin" />
+          <div className="p-12 flex flex-col items-center justify-center gap-3 text-xs font-mono text-[var(--text-muted)]">
+            <div className="w-7 h-7 border-2 border-[#D7F9FA] border-t-transparent rounded-full animate-spin" />
             <span>Loading notifications...</span>
           </div>
         ) : items.length === 0 ? (
@@ -252,13 +252,13 @@ export const NotificationsPage: React.FC = () => {
                   <div
                     key={item.id}
                     className={`p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors ${
-                      item.read ? 'bg-transparent' : 'bg-[#7C3AED]/5'
+                      item.read ? 'bg-transparent' : 'bg-[#5D7B6F]/5'
                     } hover:bg-dark-850/70`}
                   >
                     <div className="space-y-1.5 min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         {!item.read && (
-                          <span className="w-2 h-2 rounded-full bg-[#22D3EE] shrink-0" />
+                          <span className="w-2 h-2 rounded-full bg-[#D7F9FA] shrink-0" />
                         )}
                         <span
                           className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold border ${getSeverityBadge(
@@ -267,18 +267,18 @@ export const NotificationsPage: React.FC = () => {
                         >
                           {item.severity}
                         </span>
-                        <span className="text-[11px] font-mono text-slate-400">
+                        <span className="text-[11px] font-mono text-[var(--text-muted)]">
                           {item.type}
                         </span>
-                        <span className="text-[11px] font-mono text-slate-500">
+                        <span className="text-[11px] font-mono text-[var(--text-muted)]">
                           • {new Date(item.createdAt).toLocaleString()}
                         </span>
                       </div>
-                      <h3 className="text-sm font-semibold text-slate-100">
+                      <h3 className="text-sm font-semibold text-[var(--text-main)]">
                         {item.title}
                       </h3>
                       {item.message && (
-                        <p className="text-xs text-slate-400 leading-relaxed">
+                        <p className="text-xs text-[var(--text-muted)] leading-relaxed">
                           {item.message}
                         </p>
                       )}
@@ -294,7 +294,7 @@ export const NotificationsPage: React.FC = () => {
                             }
                             navigate(route);
                           }}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-mono bg-dark-850 border border-dark-700 text-slate-200 hover:border-[#7C3AED] hover:text-[#A78BFA] transition"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-mono bg-dark-850 border border-dark-700 text-[var(--text-main)] hover:border-[#5D7B6F] hover:text-[#A4C3A2] transition"
                         >
                           <span>Inspect</span>
                           <ExternalLink className="w-3 h-3" />
@@ -305,7 +305,7 @@ export const NotificationsPage: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleMarkAsRead(item)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-mono bg-[#34D399]/10 border border-[#34D399]/30 text-[#34D399] hover:bg-[#34D399]/20 transition"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-mono bg-[#B0D4B8]/10 border border-[#B0D4B8]/30 text-[#B0D4B8] hover:bg-[#B0D4B8]/20 transition"
                         >
                           <Check className="w-3.5 h-3.5" />
                           <span>Mark Read</span>
@@ -316,7 +316,7 @@ export const NotificationsPage: React.FC = () => {
                         type="button"
                         onClick={() => handleDelete(item.id)}
                         title="Delete notification"
-                        className="p-1.5 rounded-lg bg-dark-850 border border-dark-700 text-slate-400 hover:text-[#F43F5E] hover:border-[#F43F5E]/40 transition"
+                        className="p-1.5 rounded-lg bg-dark-850 border border-dark-700 text-[var(--text-muted)] hover:text-[#EAE7D6] hover:border-[#EAE7D6]/40 transition"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -327,7 +327,7 @@ export const NotificationsPage: React.FC = () => {
             </div>
 
             {/* Pagination Footer */}
-            <div className="px-4 py-3 bg-dark-850 border-t border-dark-700/80 flex flex-wrap items-center justify-between gap-3 text-xs font-mono text-slate-400">
+            <div className="px-4 py-3 bg-dark-850 border-t border-dark-700/80 flex flex-wrap items-center justify-between gap-3 text-xs font-mono text-[var(--text-muted)]">
               <div className="flex items-center gap-3">
                 <span>
                   Page {pageData.totalPages > 0 ? pageData.page + 1 : 0} of{' '}
@@ -340,7 +340,7 @@ export const NotificationsPage: React.FC = () => {
                     setPage(0);
                   }}
                   aria-label="Notifications per page"
-                  className="px-2 py-1 rounded bg-dark-900 border border-dark-700 text-slate-200 focus:outline-none focus:border-[#7C3AED]"
+                  className="px-2 py-1 rounded bg-dark-900 border border-dark-700 text-[var(--text-main)] focus:outline-none focus:border-[#5D7B6F]"
                 >
                   <option value={10}>10 / page</option>
                   <option value={20}>20 / page</option>
@@ -353,7 +353,7 @@ export const NotificationsPage: React.FC = () => {
                   type="button"
                   disabled={pageData.page <= 0}
                   onClick={() => setPage((p) => Math.max(0, p - 1))}
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-dark-900 border border-dark-700 text-slate-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-dark-900 border border-dark-700 text-[var(--text-secondary)] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                   <span>Prev</span>
@@ -362,7 +362,7 @@ export const NotificationsPage: React.FC = () => {
                   type="button"
                   disabled={pageData.page + 1 >= pageData.totalPages}
                   onClick={() => setPage((p) => p + 1)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-dark-900 border border-dark-700 text-slate-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-dark-900 border border-dark-700 text-[var(--text-secondary)] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition"
                 >
                   <span>Next</span>
                   <ChevronRight className="w-3.5 h-3.5" />

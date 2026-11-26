@@ -3,42 +3,50 @@
 @tailwind utilities;
 
 :root {
-  /* Core Surfaces */
-  --bg-main: #090C12;
-  --bg-sidebar: #0D1117;
-  --bg-card: #121821;
-  --bg-elevated: #192230;
-  --bg-input: #0D131D;
-  --bg-hover: rgba(30, 41, 59, 0.48);
-  --bg-active: rgba(16, 185, 129, 0.12);
+  /* Official SHARP Brand Palette */
+  --sharp-deep-sage: #5D7B6F;
+  --sharp-soft-sage: #A4C3A2;
+  --sharp-mint: #B0D4B8;
+  --sharp-warm-cream: #EAE7D6;
+  --sharp-ice-cyan: #D7F9FA;
 
-  /* Brand & Semantic Accents */
-  --accent-primary: #10B981;
-  --accent-primary-hover: #059669;
-  --accent-primary-muted: rgba(16, 185, 129, 0.14);
-  --accent-secondary: #38BDF8;
-  --status-success: #34D399;
-  --status-warning: #F59E0B;
-  --status-critical: #F43F5E;
-  --status-info: #38BDF8;
+  /* Derived Surfaces (Deep Forest-Sage Charcoal for Enterprise Legibility) */
+  --bg-main: #0D1311;
+  --bg-sidebar: #111916;
+  --bg-card: #16211D;
+  --bg-elevated: #1D2B26;
+  --bg-input: #101815;
+  --bg-hover: rgba(164, 195, 162, 0.1);
+  --bg-active: rgba(93, 123, 111, 0.24);
+
+  /* Brand & Semantic Accents (Derived strictly from the 5 official colors) */
+  --accent-primary: var(--sharp-deep-sage);
+  --accent-primary-hover: #4D685D;
+  --accent-primary-muted: rgba(93, 123, 111, 0.22);
+  --accent-secondary: var(--sharp-soft-sage);
+  --status-success: var(--sharp-mint);
+  --status-info: var(--sharp-ice-cyan);
+  --status-warning: var(--sharp-warm-cream);
+  --status-critical: var(--sharp-warm-cream);
 
   /* Typography */
-  --text-main: #F1F5F9;
-  --text-secondary: #CBD5E1;
-  --text-muted: #8B9BB4;
+  --text-main: var(--sharp-warm-cream);
+  --text-secondary: #D4D2C4;
+  --text-muted: #98AB9C;
+  --text-on-sage: #F6F4EC;
 
   /* Borders, Radius, Elevation & Motion */
-  --border-subtle: #1E293B;
-  --border-strong: #334155;
+  --border-subtle: rgba(164, 195, 162, 0.16);
+  --border-strong: rgba(164, 195, 162, 0.34);
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
-  --shadow-surface: 0 4px 16px rgba(2, 6, 23, 0.45);
-  --shadow-elevated: 0 12px 32px rgba(2, 6, 23, 0.65);
+  --shadow-surface: 0 4px 18px rgba(7, 11, 9, 0.45);
+  --shadow-elevated: 0 12px 32px rgba(7, 11, 9, 0.65);
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 220ms cubic-bezier(0.4, 0, 0.2, 1);
-  --focus-ring: 0 0 0 2px rgba(16, 185, 129, 0.45);
+  --focus-ring: 0 0 0 2px rgba(215, 249, 250, 0.45);
 }
 
 @layer base {
@@ -97,14 +105,16 @@
 
   .sharp-btn-primary {
     background-color: var(--accent-primary);
-    color: #04120D;
+    color: var(--text-on-sage);
+    border: 1px solid rgba(164, 195, 162, 0.35);
     border-radius: var(--radius-md);
-    transition: background-color var(--transition-fast), transform var(--transition-fast);
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
     @apply inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .sharp-btn-primary:hover:not(:disabled) {
     background-color: var(--accent-primary-hover);
+    border-color: var(--sharp-soft-sage);
   }
 
   .sharp-btn-secondary {
@@ -119,6 +129,7 @@
   .sharp-btn-secondary:hover:not(:disabled) {
     border-color: var(--border-strong);
     color: var(--text-main);
+    background-color: var(--bg-hover);
   }
 
   .sharp-input {
@@ -127,11 +138,11 @@
     color: var(--text-main);
     border-radius: var(--radius-md);
     transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-    @apply text-xs placeholder-[#64748B] focus:outline-none focus:border-[#10B981] disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply text-xs placeholder-[#7D8F82] focus:outline-none focus:border-[#A4C3A2] disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .sharp-input-error {
-    border-color: rgba(244, 63, 94, 0.65);
+    border-color: rgba(234, 231, 214, 0.72);
   }
 
   .sharp-btn-outline {
@@ -145,7 +156,7 @@
 
   .sharp-btn-outline:hover:not(:disabled) {
     background-color: var(--bg-hover);
-    border-color: var(--accent-primary);
+    border-color: var(--sharp-soft-sage);
     color: var(--text-main);
   }
 
@@ -164,18 +175,18 @@
   }
 
   .sharp-btn-danger {
-    background-color: rgba(244, 63, 94, 0.14);
-    border: 1px solid rgba(244, 63, 94, 0.4);
-    color: #FDA4AF;
+    background-color: rgba(234, 231, 214, 0.14);
+    border: 1px solid rgba(234, 231, 214, 0.55);
+    color: var(--sharp-warm-cream);
     border-radius: var(--radius-md);
     transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
     @apply inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .sharp-btn-danger:hover:not(:disabled) {
-    background-color: #E11D48;
-    border-color: #F43F5E;
-    color: #FFFFFF;
+    background-color: var(--sharp-warm-cream);
+    border-color: var(--sharp-warm-cream);
+    color: var(--bg-main);
   }
 
   .sharp-table-wrap {
@@ -187,13 +198,13 @@
   }
 
   .sharp-table thead th {
-    background-color: rgba(13, 19, 29, 0.72);
+    background-color: rgba(16, 24, 21, 0.85);
     border-bottom: 1px solid var(--border-subtle);
     @apply px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-[var(--text-muted)] font-medium whitespace-nowrap;
   }
 
   .sharp-table tbody tr {
-    border-bottom: 1px solid rgba(30, 41, 59, 0.7);
+    border-bottom: 1px solid rgba(164, 195, 162, 0.12);
     transition: background-color var(--transition-fast);
   }
 
@@ -212,9 +223,9 @@
   .sharp-skeleton {
     background: linear-gradient(
       90deg,
-      rgba(25, 34, 48, 0.7) 25%,
-      rgba(38, 52, 72, 0.85) 50%,
-      rgba(25, 34, 48, 0.7) 75%
+      rgba(29, 43, 38, 0.72) 25%,
+      rgba(93, 123, 111, 0.34) 50%,
+      rgba(29, 43, 38, 0.72) 75%
     );
     background-size: 200% 100%;
     animation: sharp-shimmer 1.6s ease-in-out infinite;

@@ -42,19 +42,19 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   const accent =
     variant === 'danger'
       ? {
-          iconBg: 'bg-[#F43F5E]/15 border-[#F43F5E]/35 text-[#F43F5E]',
-          button: 'bg-[#F43F5E] hover:bg-[#E11D48] text-white',
+          iconBg: 'bg-[#EAE7D6]/15 border-[#EAE7D6]/55 text-[#EAE7D6]',
+          button: 'bg-[#EAE7D6] hover:bg-[#D4D2C4] text-[#0D1311]',
           Icon: ShieldAlert,
         }
       : variant === 'warning'
       ? {
-          iconBg: 'bg-[#F59E0B]/15 border-[#F59E0B]/35 text-[#F59E0B]',
-          button: 'bg-[#F59E0B] hover:bg-[#D97706] text-slate-950',
+          iconBg: 'bg-[#A4C3A2]/15 border-[#A4C3A2]/45 text-[#EAE7D6]',
+          button: 'bg-[#A4C3A2] hover:bg-[#8EB08C] text-[#0D1311]',
           Icon: AlertTriangle,
         }
       : {
-          iconBg: 'bg-[#10B981]/15 border-[#10B981]/35 text-[#34D399]',
-          button: 'bg-[#10B981] hover:bg-[#059669] text-[#04120D]',
+          iconBg: 'bg-[#5D7B6F]/25 border-[#A4C3A2]/45 text-[#D7F9FA]',
+          button: 'bg-[#5D7B6F] hover:bg-[#4D685D] text-[#F6F4EC]',
           Icon: ShieldAlert,
         };
 

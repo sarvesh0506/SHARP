@@ -130,11 +130,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMobileMenu }) => {
 
   const statusColor =
     engineStatus === 'ONLINE'
-      ? 'text-[#34D399]'
+      ? 'text-[#B0D4B8]'
       : engineStatus === 'DEGRADED' || engineStatus === 'CHECKING'
-      ? 'text-[#F59E0B]'
+      ? 'text-[#EAE7D6]'
       : engineStatus === 'OFFLINE'
-      ? 'text-[#F43F5E]'
+      ? 'text-[#EAE7D6] underline decoration-dotted'
       : 'text-[var(--text-muted)]';
 
   const initials = (user?.username || 'OP').slice(0, 2).toUpperCase();
@@ -154,7 +154,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMobileMenu }) => {
           </button>
         )}
 
-        <div className="shrink-0 rounded-lg bg-[#05070A] border border-[var(--border-subtle)] px-2 py-1 flex items-center">
+        <div className="shrink-0 rounded-lg bg-[var(--bg-main)] border border-[var(--border-subtle)] px-2 py-1 flex items-center">
           <SharpLogo variant="navbar" />
         </div>
 
@@ -162,12 +162,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMobileMenu }) => {
           aria-label="Breadcrumb"
           className="hidden sm:flex items-center gap-1.5 text-xs min-w-0"
         >
-          <span className="text-[11px] font-mono uppercase px-1.5 py-0.5 rounded bg-[#10B981]/12 text-[#34D399] border border-[#10B981]/30 shrink-0">
+          <span className="text-[11px] font-mono uppercase px-1.5 py-0.5 rounded bg-[#5D7B6F]/25 text-[#EAE7D6] border border-[#A4C3A2]/35 shrink-0">
             SHARP
           </span>
-          <ChevronRight className="w-3.5 h-3.5 text-[#475569] shrink-0" />
+          <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)] shrink-0" />
           <span className="text-[var(--text-muted)] truncate">{routeMeta.section}</span>
-          <ChevronRight className="w-3.5 h-3.5 text-[#475569] shrink-0" />
+          <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)] shrink-0" />
           <span className="font-medium text-[var(--text-main)] truncate">
             {routeMeta.label}
           </span>
@@ -194,20 +194,20 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMobileMenu }) => {
           <Cpu
             className={`w-3.5 h-3.5 ${
               aiStatus === 'ONLINE'
-                ? 'text-[#38BDF8]'
+                ? 'text-[#D7F9FA]'
                 : aiStatus === 'CHECKING'
-                ? 'text-[#F59E0B]'
-                : 'text-[#64748B]'
+                ? 'text-[#A4C3A2]'
+                : 'text-[var(--text-muted)]'
             }`}
           />
           <span className="text-[var(--text-muted)]">AI Service:</span>
           <span
             className={`font-mono font-medium ${
               aiStatus === 'ONLINE'
-                ? 'text-[#38BDF8]'
+                ? 'text-[#D7F9FA]'
                 : aiStatus === 'CHECKING'
-                ? 'text-[#F59E0B]'
-                : 'text-[#F43F5E]'
+                ? 'text-[#A4C3A2]'
+                : 'text-[#EAE7D6]'
             }`}
           >
             {aiStatus}
@@ -219,25 +219,25 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMobileMenu }) => {
           type="button"
           onClick={() => navigate('/events')}
           title="Open Live Event Stream"
-          className="hidden lg:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[#10B981]/40 text-xs transition-colors"
+          className="hidden lg:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[#A4C3A2]/50 text-xs transition-colors"
         >
           <Radio
             className={`w-3.5 h-3.5 ${
               wsStatus === 'CONNECTED'
-                ? 'text-[#34D399]'
+                ? 'text-[#B0D4B8]'
                 : wsStatus === 'DISCONNECTED'
-                ? 'text-[#F43F5E]'
-                : 'text-[#F59E0B]'
+                ? 'text-[#EAE7D6]'
+                : 'text-[#A4C3A2]'
             }`}
           />
           <span className="text-[var(--text-muted)]">Stream:</span>
           <span
             className={`font-mono font-medium ${
               wsStatus === 'CONNECTED'
-                ? 'text-[#34D399]'
+                ? 'text-[#B0D4B8]'
                 : wsStatus === 'DISCONNECTED'
-                ? 'text-[#F43F5E]'
-                : 'text-[#F59E0B]'
+                ? 'text-[#EAE7D6]'
+                : 'text-[#A4C3A2]'
             }`}
           >
             {wsStatus}
@@ -256,7 +256,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMobileMenu }) => {
             aria-label="User profile menu"
             className="flex items-center gap-2.5 px-2 py-1 rounded-lg hover:bg-[var(--bg-elevated)] border border-transparent hover:border-[var(--border-subtle)] transition-colors"
           >
-            <div className="w-7 h-7 rounded-md bg-[#10B981]/15 border border-[#10B981]/35 text-[#34D399] font-mono text-[11px] font-semibold flex items-center justify-center">
+            <div className="w-7 h-7 rounded-md bg-[#5D7B6F]/30 border border-[#A4C3A2]/45 text-[#EAE7D6] font-mono text-[11px] font-semibold flex items-center justify-center">
               {initials}
             </div>
             <div className="hidden sm:block text-left">
@@ -265,7 +265,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMobileMenu }) => {
               </div>
               <div
                 className={`text-[10px] font-mono leading-tight ${
-                  isAdmin ? 'text-[#F59E0B]' : 'text-[#38BDF8]'
+                  isAdmin ? 'text-[#EAE7D6]' : 'text-[#D7F9FA]'
                 }`}
               >
                 {isAdmin ? 'ADMIN' : 'OPERATOR'}
@@ -275,7 +275,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMobileMenu }) => {
           </button>
 
           {profileOpen && (
-            <div className="absolute right-0 mt-2 w-56 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-elevated z-50 overflow-hidden text-xs">
+            <div className="absolute right-0 mt-2 w-56 rounded-xl bg-[var(--bg-card)] border border-[var(--border-strong)] shadow-elevated z-50 overflow-hidden text-xs">
               <div className="px-4 py-3 bg-[var(--bg-elevated)] border-b border-[var(--border-subtle)]">
                 <div className="font-semibold text-[var(--text-main)] truncate">
                   {user?.username || 'Operator'}
@@ -284,7 +284,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMobileMenu }) => {
                   {user?.email || 'authenticated@sharp.local'}
                 </div>
                 <div className="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono border border-[var(--border-subtle)] bg-[var(--bg-card)] text-[var(--text-secondary)]">
-                  <Shield className="w-2.5 h-2.5 text-[#34D399]" />
+                  <Shield className="w-2.5 h-2.5 text-[#B0D4B8]" />
                   {user?.role || 'ROLE_OPERATOR'}
                 </div>
               </div>
@@ -298,7 +298,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMobileMenu }) => {
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-elevated)] transition-colors text-left"
                 >
-                  <Bell className="w-3.5 h-3.5 text-[#38BDF8]" />
+                  <Bell className="w-3.5 h-3.5 text-[#D7F9FA]" />
                   <span>Notification Center</span>
                 </button>
                 {isAdmin && (
@@ -310,7 +310,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMobileMenu }) => {
                     }}
                     className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-elevated)] transition-colors text-left"
                   >
-                    <Users className="w-3.5 h-3.5 text-[#F59E0B]" />
+                    <Users className="w-3.5 h-3.5 text-[#A4C3A2]" />
                     <span>User Management</span>
                   </button>
                 )}
@@ -323,7 +323,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMobileMenu }) => {
                     setProfileOpen(false);
                     logout();
                   }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[#F43F5E] hover:bg-[#F43F5E]/10 transition-colors text-left font-medium"
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[#EAE7D6] hover:bg-[#EAE7D6]/12 transition-colors text-left font-medium"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                   <span>Sign Out</span>

@@ -165,9 +165,9 @@ export const AgentsPage: React.FC = () => {
       {error && <ErrorBanner message={error} onRetry={fetchAgentStatus} />}
 
       {reachable === false && (
-        <div className="p-4 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/30 text-xs space-y-1">
-          <div className="font-mono font-bold text-[#F59E0B]">AI SERVICE OFFLINE</div>
-          <p className="text-[#E2E8F0]">
+        <div className="p-4 rounded-xl bg-[#EAE7D6]/10 border border-[#EAE7D6]/30 text-xs space-y-1">
+          <div className="font-mono font-bold text-[#EAE7D6]">AI SERVICE OFFLINE</div>
+          <p className="text-[#EAE7D6]">
             {serviceMessage || 'Python FastAPI AI service is not currently running on port 8000. Agent statuses are shown as OFFLINE.'}
           </p>
         </div>
@@ -187,30 +187,30 @@ export const AgentsPage: React.FC = () => {
               <div className="space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2.5">
-                    <div className="p-2 rounded-lg bg-[#7C3AED]/15 border border-[#7C3AED]/35 text-[#A78BFA]">
+                    <div className="p-2 rounded-lg bg-[#5D7B6F]/15 border border-[#5D7B6F]/35 text-[#A4C3A2]">
                       <Icon className="w-4 h-4" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-semibold text-slate-100 font-mono">{agent.name}</h3>
-                      <p className="text-[11px] text-[#22D3EE]">{agent.role}</p>
+                      <h3 className="text-sm font-semibold text-[var(--text-main)] font-mono">{agent.name}</h3>
+                      <p className="text-[11px] text-[#D7F9FA]">{agent.role}</p>
                     </div>
                   </div>
                   <StatusBadge status={status} />
                 </div>
 
-                <p className="text-xs text-slate-400 leading-relaxed">{agent.description}</p>
+                <p className="text-xs text-[var(--text-muted)] leading-relaxed">{agent.description}</p>
 
-                <ul className="space-y-1 text-[11px] text-slate-300 font-mono">
+                <ul className="space-y-1 text-[11px] text-[var(--text-secondary)] font-mono">
                   {agent.responsibilities.map((r) => (
                     <li key={r} className="flex items-start gap-1.5">
-                      <span className="text-[#7C3AED]">•</span>
+                      <span className="text-[#5D7B6F]">•</span>
                       <span>{r}</span>
                     </li>
                   ))}
                 </ul>
               </div>
 
-              <div className="pt-3 border-t border-dark-800 flex items-start gap-1.5 text-[11px] text-amber-400/90 font-mono">
+              <div className="pt-3 border-t border-dark-800 flex items-start gap-1.5 text-[11px] text-[#EAE7D6]/90 font-mono">
                 <Lock className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                 <span>Bound: {agent.safetyBound}</span>
               </div>

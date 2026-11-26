@@ -13,19 +13,19 @@ interface ToastProps {
 
 const STYLES: Record<ToastVariant, { wrap: string; icon: React.ReactNode }> = {
   success: {
-    wrap: 'bg-[#10B981]/12 border-[#10B981]/35 text-[#34D399]',
+    wrap: 'bg-[#B0D4B8]/12 border-[#B0D4B8]/38 text-[#B0D4B8]',
     icon: <CheckCircle2 className="w-4 h-4 shrink-0" />,
   },
   error: {
-    wrap: 'bg-[#F43F5E]/12 border-[#F43F5E]/35 text-[#FDA4AF]',
+    wrap: 'bg-[#EAE7D6]/16 border-[#EAE7D6]/65 text-[#EAE7D6]',
     icon: <AlertCircle className="w-4 h-4 shrink-0" />,
   },
   warning: {
-    wrap: 'bg-[#F59E0B]/12 border-[#F59E0B]/35 text-[#FCD34D]',
+    wrap: 'bg-[#EAE7D6]/10 border-dashed border-[#EAE7D6]/45 text-[#EAE7D6]',
     icon: <AlertCircle className="w-4 h-4 shrink-0" />,
   },
   info: {
-    wrap: 'bg-[#38BDF8]/12 border-[#38BDF8]/35 text-[#7DD3FC]',
+    wrap: 'bg-[#D7F9FA]/12 border-[#D7F9FA]/35 text-[#D7F9FA]',
     icon: <Info className="w-4 h-4 shrink-0" />,
   },
 };

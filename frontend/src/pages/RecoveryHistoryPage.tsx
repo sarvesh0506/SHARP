@@ -82,25 +82,25 @@ export const RecoveryHistoryPage: React.FC = () => {
       {error && <ErrorBanner message={error} onRetry={fetchHistory} />}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Executions" value={actions.length} subtitle="All recorded attempts" icon={History} color="text-[#A78BFA]" />
-        <StatCard title="Verified / Succeeded" value={successCount} subtitle="Independently verified" icon={CheckCircle2} color="text-[#34D399]" />
-        <StatCard title="Failed / Rejected" value={failedCount} subtitle="Unsuccessful or denied" icon={XCircle} color={failedCount > 0 ? 'text-[#F43F5E]' : 'text-slate-400'} />
-        <StatCard title="Avg Duration" value={avgDuration} subtitle="Initiated → Verified" icon={Clock} color="text-[#22D3EE]" />
+        <StatCard title="Total Executions" value={actions.length} subtitle="All recorded attempts" icon={History} color="text-[#A4C3A2]" />
+        <StatCard title="Verified / Succeeded" value={successCount} subtitle="Independently verified" icon={CheckCircle2} color="text-[#B0D4B8]" />
+        <StatCard title="Failed / Rejected" value={failedCount} subtitle="Unsuccessful or denied" icon={XCircle} color={failedCount > 0 ? 'text-[#EAE7D6]' : 'text-[var(--text-muted)]'} />
+        <StatCard title="Avg Duration" value={avgDuration} subtitle="Initiated → Verified" icon={Clock} color="text-[#D7F9FA]" />
       </div>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center text-xs font-mono">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)]" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search action, incident ID, actor..."
-            className="w-full pl-8 pr-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-slate-200 focus:outline-none focus:border-[#7C3AED]"
+            className="w-full pl-8 pr-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-[var(--text-main)] focus:outline-none focus:border-[#5D7B6F]"
           />
         </div>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-slate-200">
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-[var(--text-main)]">
           <option value="ALL">All Statuses</option>
           <option value="VERIFIED">VERIFIED</option>
           <option value="SUCCESS">SUCCESS</option>
@@ -108,19 +108,19 @@ export const RecoveryHistoryPage: React.FC = () => {
           <option value="REJECTED">REJECTED</option>
           <option value="AWAITING_APPROVAL">AWAITING_APPROVAL</option>
         </select>
-        <select value={actionFilter} onChange={(e) => setActionFilter(e.target.value)} className="px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-slate-200">
+        <select value={actionFilter} onChange={(e) => setActionFilter(e.target.value)} className="px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-[var(--text-main)]">
           <option value="ALL">All Actions</option>
           {uniqueActionTypes.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
-        <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="px-2.5 py-2 rounded-lg bg-dark-850 border border-dark-700 text-slate-200" />
-        <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="px-2.5 py-2 rounded-lg bg-dark-850 border border-dark-700 text-slate-200" />
+        <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="px-2.5 py-2 rounded-lg bg-dark-850 border border-dark-700 text-[var(--text-main)]" />
+        <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="px-2.5 py-2 rounded-lg bg-dark-850 border border-dark-700 text-[var(--text-main)]" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-dark-900 border border-dark-700/80 rounded-xl overflow-hidden shadow-lg">
           {loading ? (
-            <div className="p-12 text-center text-slate-500 font-mono text-xs">
-              <RefreshCw className="w-4 h-4 animate-spin inline mr-2 text-[#7C3AED]" />
+            <div className="p-12 text-center text-[var(--text-muted)] font-mono text-xs">
+              <RefreshCw className="w-4 h-4 animate-spin inline mr-2 text-[#5D7B6F]" />
               Loading recovery ledger...
             </div>
           ) : filtered.length === 0 ? (
@@ -132,7 +132,7 @@ export const RecoveryHistoryPage: React.FC = () => {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-dark-850 border-b border-dark-700/80 text-slate-400 uppercase font-mono text-[11px]">
+                <thead className="bg-dark-850 border-b border-dark-700/80 text-[var(--text-muted)] uppercase font-mono text-[11px]">
                   <tr>
                     <th className="py-3 px-4">ID</th>
                     <th className="py-3 px-4">Action</th>
@@ -153,13 +153,13 @@ export const RecoveryHistoryPage: React.FC = () => {
                         key={act.id}
                         onClick={() => setSelected(act)}
                         className={`cursor-pointer hover:bg-dark-850/60 transition ${
-                          selected?.id === act.id ? 'bg-dark-850 border-l-2 border-[#7C3AED]' : ''
+                          selected?.id === act.id ? 'bg-dark-850 border-l-2 border-[#5D7B6F]' : ''
                         }`}
                       >
-                        <td className="py-3 px-4 text-slate-500">#{act.id}</td>
-                        <td className="py-3 px-4 font-semibold text-slate-200">{act.actionType}</td>
-                        <td className="py-3 px-4 text-slate-400">#{act.incidentId}</td>
-                        <td className="py-3 px-4 text-slate-400">{dur}</td>
+                        <td className="py-3 px-4 text-[var(--text-muted)]">#{act.id}</td>
+                        <td className="py-3 px-4 font-semibold text-[var(--text-main)]">{act.actionType}</td>
+                        <td className="py-3 px-4 text-[var(--text-muted)]">#{act.incidentId}</td>
+                        <td className="py-3 px-4 text-[var(--text-muted)]">{dur}</td>
                         <td className="py-3 px-4"><StatusBadge status={act.status} /></td>
                         <td className="py-3 px-4"><StatusBadge status={act.verificationStatus} /></td>
                       </tr>
@@ -173,35 +173,35 @@ export const RecoveryHistoryPage: React.FC = () => {
 
         {/* Execution Log & Verification Evidence */}
         <div className="bg-dark-900 border border-dark-700/80 rounded-xl p-5 shadow-lg space-y-4">
-          <h2 className="text-sm font-semibold text-slate-200 pb-3 border-b border-dark-800">
+          <h2 className="text-sm font-semibold text-[var(--text-main)] pb-3 border-b border-dark-800">
             Execution & Verification Log
           </h2>
           {selected ? (
             <div className="space-y-3 text-xs font-mono">
-              <div className="text-[#A78BFA]">Execution #{selected.id} · {selected.actionType}</div>
-              <div className="text-slate-400">Target: <span className="text-slate-200">{selected.targetResource || 'Host'}</span></div>
-              <div className="text-slate-400">Initiated By: <span className="text-slate-200">{selected.initiatedBy || 'SYSTEM'}</span></div>
-              <div className="text-slate-400">Approved By: <span className="text-slate-200">{selected.approvedBy || (selected.requiresApproval ? 'Pending' : 'Auto-Policy')}</span></div>
+              <div className="text-[#A4C3A2]">Execution #{selected.id} · {selected.actionType}</div>
+              <div className="text-[var(--text-muted)]">Target: <span className="text-[var(--text-main)]">{selected.targetResource || 'Host'}</span></div>
+              <div className="text-[var(--text-muted)]">Initiated By: <span className="text-[var(--text-main)]">{selected.initiatedBy || 'SYSTEM'}</span></div>
+              <div className="text-[var(--text-muted)]">Approved By: <span className="text-[var(--text-main)]">{selected.approvedBy || (selected.requiresApproval ? 'Pending' : 'Auto-Policy')}</span></div>
               {selected.executionDetails && (
                 <div>
-                  <div className="text-slate-500 mb-1">Execution Output</div>
-                  <pre className="p-2.5 rounded bg-dark-950 border border-dark-800 text-[11px] text-slate-300 whitespace-pre-wrap">{selected.executionDetails}</pre>
+                  <div className="text-[var(--text-muted)] mb-1">Execution Output</div>
+                  <pre className="p-2.5 rounded bg-dark-950 border border-dark-800 text-[11px] text-[var(--text-secondary)] whitespace-pre-wrap">{selected.executionDetails}</pre>
                 </div>
               )}
               {selected.verificationEvidence && (
                 <div>
-                  <div className="text-slate-500 mb-1">Independent Verification Evidence</div>
-                  <pre className="p-2.5 rounded bg-dark-950 border border-dark-800 text-[11px] text-[#22D3EE] whitespace-pre-wrap">{selected.verificationEvidence}</pre>
+                  <div className="text-[var(--text-muted)] mb-1">Independent Verification Evidence</div>
+                  <pre className="p-2.5 rounded bg-dark-950 border border-dark-800 text-[11px] text-[#D7F9FA] whitespace-pre-wrap">{selected.verificationEvidence}</pre>
                 </div>
               )}
               {selected.failureReason && (
-                <div className="p-2.5 rounded bg-[#F43F5E]/10 border border-[#F43F5E]/35 text-[#F43F5E]">
+                <div className="p-2.5 rounded bg-[#EAE7D6]/10 border border-[#EAE7D6]/35 text-[#EAE7D6]">
                   Failure: {selected.failureReason}
                 </div>
               )}
             </div>
           ) : (
-            <p className="text-xs text-slate-500 font-mono">Select an execution row to inspect logs and verification evidence.</p>
+            <p className="text-xs text-[var(--text-muted)] font-mono">Select an execution row to inspect logs and verification evidence.</p>
           )}
         </div>
       </div>

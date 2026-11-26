@@ -110,29 +110,29 @@ export const SettingsPage: React.FC = () => {
       {error && <ErrorBanner message={error} onRetry={fetchConfigs} />}
 
       {!isAdmin && (
-        <div className="p-4 rounded-xl bg-dark-900 border border-dark-700 text-xs text-slate-400 font-mono flex items-center gap-2">
-          <Lock className="w-4 h-4 text-amber-400" />
-          Signed in as <strong className="text-slate-200">{user?.username}</strong> (OPERATOR). Only Administrators can persist configuration changes.
+        <div className="p-4 rounded-xl bg-dark-900 border border-dark-700 text-xs text-[var(--text-muted)] font-mono flex items-center gap-2">
+          <Lock className="w-4 h-4 text-[#EAE7D6]" />
+          Signed in as <strong className="text-[var(--text-main)]">{user?.username}</strong> (OPERATOR). Only Administrators can persist configuration changes.
         </div>
       )}
 
       {loading ? (
-        <div className="p-12 text-center text-slate-500 font-mono text-xs">
-          <RefreshCw className="w-5 h-5 animate-spin inline mr-2 text-[#7C3AED]" />
+        <div className="p-12 text-center text-[var(--text-muted)] font-mono text-xs">
+          <RefreshCw className="w-5 h-5 animate-spin inline mr-2 text-[#5D7B6F]" />
           Loading persisted configuration...
         </div>
       ) : (
         <form onSubmit={handleSave} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Thresholds */}
           <div className="bg-dark-900 border border-dark-700/80 rounded-xl p-5 shadow-lg space-y-4">
-            <h2 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-              <Sliders className="w-4 h-4 text-[#A78BFA]" />
+            <h2 className="text-sm font-semibold text-[var(--text-main)] flex items-center gap-2">
+              <Sliders className="w-4 h-4 text-[#A4C3A2]" />
               Resource Thresholds
             </h2>
 
             <div className="grid grid-cols-2 gap-4 text-xs">
               <div>
-                <label className="block text-slate-400 font-mono mb-1">CPU Warning (%)</label>
+                <label className="block text-[var(--text-muted)] font-mono mb-1">CPU Warning (%)</label>
                 <input
                   type="number"
                   min={1}
@@ -140,11 +140,11 @@ export const SettingsPage: React.FC = () => {
                   disabled={!isAdmin}
                   value={cpuWarning}
                   onChange={(e) => setCpuWarning(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-slate-200 font-mono focus:outline-none focus:border-[#7C3AED] disabled:opacity-50"
+                  className="w-full px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-[var(--text-main)] font-mono focus:outline-none focus:border-[#5D7B6F] disabled:opacity-50"
                 />
               </div>
               <div>
-                <label className="block text-slate-400 font-mono mb-1">CPU Critical (%)</label>
+                <label className="block text-[var(--text-muted)] font-mono mb-1">CPU Critical (%)</label>
                 <input
                   type="number"
                   min={2}
@@ -152,11 +152,11 @@ export const SettingsPage: React.FC = () => {
                   disabled={!isAdmin}
                   value={cpuCritical}
                   onChange={(e) => setCpuCritical(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-slate-200 font-mono focus:outline-none focus:border-[#7C3AED] disabled:opacity-50"
+                  className="w-full px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-[var(--text-main)] font-mono focus:outline-none focus:border-[#5D7B6F] disabled:opacity-50"
                 />
               </div>
               <div>
-                <label className="block text-slate-400 font-mono mb-1">Memory Warning (%)</label>
+                <label className="block text-[var(--text-muted)] font-mono mb-1">Memory Warning (%)</label>
                 <input
                   type="number"
                   min={1}
@@ -164,11 +164,11 @@ export const SettingsPage: React.FC = () => {
                   disabled={!isAdmin}
                   value={memWarning}
                   onChange={(e) => setMemWarning(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-slate-200 font-mono focus:outline-none focus:border-[#7C3AED] disabled:opacity-50"
+                  className="w-full px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-[var(--text-main)] font-mono focus:outline-none focus:border-[#5D7B6F] disabled:opacity-50"
                 />
               </div>
               <div>
-                <label className="block text-slate-400 font-mono mb-1">Memory Critical (%)</label>
+                <label className="block text-[var(--text-muted)] font-mono mb-1">Memory Critical (%)</label>
                 <input
                   type="number"
                   min={2}
@@ -176,11 +176,11 @@ export const SettingsPage: React.FC = () => {
                   disabled={!isAdmin}
                   value={memCritical}
                   onChange={(e) => setMemCritical(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-slate-200 font-mono focus:outline-none focus:border-[#7C3AED] disabled:opacity-50"
+                  className="w-full px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-[var(--text-main)] font-mono focus:outline-none focus:border-[#5D7B6F] disabled:opacity-50"
                 />
               </div>
               <div>
-                <label className="block text-slate-400 font-mono mb-1">Disk Warning (%)</label>
+                <label className="block text-[var(--text-muted)] font-mono mb-1">Disk Warning (%)</label>
                 <input
                   type="number"
                   min={10}
@@ -188,11 +188,11 @@ export const SettingsPage: React.FC = () => {
                   disabled={!isAdmin}
                   value={diskWarning}
                   onChange={(e) => setDiskWarning(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-slate-200 font-mono focus:outline-none focus:border-[#7C3AED] disabled:opacity-50"
+                  className="w-full px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-[var(--text-main)] font-mono focus:outline-none focus:border-[#5D7B6F] disabled:opacity-50"
                 />
               </div>
               <div>
-                <label className="block text-slate-400 font-mono mb-1">Network Warning (Mbps)</label>
+                <label className="block text-[var(--text-muted)] font-mono mb-1">Network Warning (Mbps)</label>
                 <input
                   type="number"
                   min={1}
@@ -200,7 +200,7 @@ export const SettingsPage: React.FC = () => {
                   disabled={!isAdmin}
                   value={netMbpsWarning}
                   onChange={(e) => setNetMbpsWarning(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-slate-200 font-mono focus:outline-none focus:border-[#7C3AED] disabled:opacity-50"
+                  className="w-full px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-[var(--text-main)] font-mono focus:outline-none focus:border-[#5D7B6F] disabled:opacity-50"
                 />
               </div>
             </div>
@@ -208,15 +208,15 @@ export const SettingsPage: React.FC = () => {
 
           {/* Telemetry Collection & Retention */}
           <div className="bg-dark-900 border border-dark-700/80 rounded-xl p-5 shadow-lg space-y-4">
-            <h2 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-              <Database className="w-4 h-4 text-[#22D3EE]" />
+            <h2 className="text-sm font-semibold text-[var(--text-main)] flex items-center gap-2">
+              <Database className="w-4 h-4 text-[#D7F9FA]" />
               Telemetry Collection & Retention
             </h2>
 
             <label className="flex items-start justify-between gap-4 p-3 rounded-lg bg-dark-850 border border-dark-700 cursor-pointer text-xs">
               <div>
-                <div className="font-semibold text-slate-200">Enable Background Telemetry Collector</div>
-                <div className="text-slate-400 mt-0.5">
+                <div className="font-semibold text-[var(--text-main)]">Enable Background Telemetry Collector</div>
+                <div className="text-[var(--text-muted)] mt-0.5">
                   Periodically collects real host CPU, memory, disk, network, and OS process metrics.
                 </div>
               </div>
@@ -225,13 +225,13 @@ export const SettingsPage: React.FC = () => {
                 disabled={!isAdmin}
                 checked={monitoringEnabled}
                 onChange={(e) => setMonitoringEnabled(e.target.checked)}
-                className="mt-1 h-4 w-4 accent-[#7C3AED]"
+                className="mt-1 h-4 w-4 accent-[#5D7B6F]"
               />
             </label>
 
             <div className="grid grid-cols-2 gap-4 text-xs">
               <div>
-                <label className="block text-slate-400 font-mono mb-1">Collection Interval (sec)</label>
+                <label className="block text-[var(--text-muted)] font-mono mb-1">Collection Interval (sec)</label>
                 <input
                   type="number"
                   min={2}
@@ -239,11 +239,11 @@ export const SettingsPage: React.FC = () => {
                   disabled={!isAdmin}
                   value={intervalSec}
                   onChange={(e) => setIntervalSec(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-slate-200 font-mono focus:outline-none focus:border-[#7C3AED] disabled:opacity-50"
+                  className="w-full px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-[var(--text-main)] font-mono focus:outline-none focus:border-[#5D7B6F] disabled:opacity-50"
                 />
               </div>
               <div>
-                <label className="block text-slate-400 font-mono mb-1">Metric Retention (hours)</label>
+                <label className="block text-[var(--text-muted)] font-mono mb-1">Metric Retention (hours)</label>
                 <input
                   type="number"
                   min={1}
@@ -251,12 +251,12 @@ export const SettingsPage: React.FC = () => {
                   disabled={!isAdmin}
                   value={retentionHours}
                   onChange={(e) => setRetentionHours(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-slate-200 font-mono focus:outline-none focus:border-[#7C3AED] disabled:opacity-50"
+                  className="w-full px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-[var(--text-main)] font-mono focus:outline-none focus:border-[#5D7B6F] disabled:opacity-50"
                 />
               </div>
             </div>
 
-            <div className="p-3 rounded-lg bg-dark-950 border border-dark-800 flex items-center gap-2 text-[11px] font-mono text-amber-400">
+            <div className="p-3 rounded-lg bg-dark-950 border border-dark-800 flex items-center gap-2 text-[11px] font-mono text-[#EAE7D6]">
               <Shield className="w-4 h-4 shrink-0" />
               Safety invariant: High-risk recovery execution without Administrator approval remains permanently disabled.
             </div>
@@ -264,7 +264,7 @@ export const SettingsPage: React.FC = () => {
 
           <div className="lg:col-span-2 space-y-3">
             {savedNotice && (
-              <div className="p-3 rounded-xl bg-[#34D399]/10 border border-[#34D399]/35 text-[#34D399] text-xs font-mono">
+              <div className="p-3 rounded-xl bg-[#B0D4B8]/10 border border-[#B0D4B8]/35 text-[#B0D4B8] text-xs font-mono">
                 {savedNotice}
               </div>
             )}
@@ -272,7 +272,7 @@ export const SettingsPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={!isAdmin || saving}
-                className="px-4 py-2 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] disabled:opacity-50 text-white text-xs font-medium flex items-center gap-2 transition"
+                className="px-4 py-2 rounded-lg bg-[#5D7B6F] hover:bg-[#4D685D] disabled:opacity-50 text-white text-xs font-medium flex items-center gap-2 transition"
               >
                 <Save className="w-4 h-4" />
                 {saving ? 'Saving...' : 'Save Configuration'}

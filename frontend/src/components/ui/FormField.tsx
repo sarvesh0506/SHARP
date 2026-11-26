@@ -23,11 +23,11 @@ export const FormField: React.FC<FormFieldProps> = ({
     <div className={`space-y-1.5 ${className}`.trim()}>
       <label htmlFor={htmlFor} className="sharp-label block">
         {label}
-        {required && <span className="text-[#F43F5E] ml-1">*</span>}
+        {required && <span className="text-[#EAE7D6] ml-1">*</span>}
       </label>
       {children}
       {error ? (
-        <p className="text-[11px] text-[#F43F5E]" role="alert">
+        <p className="text-[11px] text-[#EAE7D6] font-medium" role="alert">
           {error}
         </p>
       ) : hint ? (

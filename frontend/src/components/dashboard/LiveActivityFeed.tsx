@@ -37,11 +37,11 @@ const resolveRoute = (type: string): string => {
 };
 
 const getEventIcon = (type: string) => {
-  if (type.startsWith('ANOMALY_')) return { Icon: Radar, color: 'text-[#F59E0B]' };
-  if (type.startsWith('INCIDENT_')) return { Icon: AlertTriangle, color: 'text-[#F43F5E]' };
-  if (type.startsWith('RCA_')) return { Icon: Stethoscope, color: 'text-[#38BDF8]' };
-  if (type.includes('VERIFIED')) return { Icon: CheckCircle2, color: 'text-[#34D399]' };
-  return { Icon: ShieldCheck, color: 'text-[#34D399]' };
+  if (type.startsWith('ANOMALY_')) return { Icon: Radar, color: 'text-[#EAE7D6]' };
+  if (type.startsWith('INCIDENT_')) return { Icon: AlertTriangle, color: 'text-[#EAE7D6]' };
+  if (type.startsWith('RCA_')) return { Icon: Stethoscope, color: 'text-[#D7F9FA]' };
+  if (type.includes('VERIFIED')) return { Icon: CheckCircle2, color: 'text-[#B0D4B8]' };
+  return { Icon: ShieldCheck, color: 'text-[#B0D4B8]' };
 };
 
 export const LiveActivityFeed: React.FC = () => {
@@ -54,10 +54,10 @@ export const LiveActivityFeed: React.FC = () => {
           <Radio
             className={`w-4 h-4 ${
               status === 'CONNECTED'
-                ? 'text-[#34D399]'
+                ? 'text-[#B0D4B8]'
                 : status === 'DISCONNECTED'
-                ? 'text-[#F43F5E]'
-                : 'text-[#F59E0B]'
+                ? 'text-[#EAE7D6]'
+                : 'text-[#EAE7D6]'
             }`}
           />
           <h2 id="live-timeline-heading" className="sharp-section-title">
@@ -70,7 +70,7 @@ export const LiveActivityFeed: React.FC = () => {
             <button
               type="button"
               onClick={reconnect}
-              className="text-[11px] font-mono text-[#38BDF8] hover:underline inline-flex items-center gap-1"
+              className="text-[11px] font-mono text-[#D7F9FA] hover:underline inline-flex items-center gap-1"
             >
               <RefreshCw className="w-3 h-3" />
               <span>Reconnect</span>
@@ -78,7 +78,7 @@ export const LiveActivityFeed: React.FC = () => {
           )}
           <Link
             to="/events"
-            className="text-xs font-mono text-[#34D399] hover:underline inline-flex items-center gap-1"
+            className="text-xs font-mono text-[#B0D4B8] hover:underline inline-flex items-center gap-1"
           >
             <span>Full Stream</span>
             <ArrowRight className="w-3 h-3" />
@@ -104,7 +104,7 @@ export const LiveActivityFeed: React.FC = () => {
               >
                 <span
                   aria-hidden="true"
-                  className="absolute -left-[21px] top-3.5 w-2.5 h-2.5 rounded-full bg-[var(--bg-card)] border-2 border-[#10B981]"
+                  className="absolute -left-[21px] top-3.5 w-2.5 h-2.5 rounded-full bg-[var(--bg-card)] border-2 border-[#5D7B6F]"
                 />
                 <div className="flex items-center justify-between gap-2">
                   <span className={`inline-flex items-center gap-1.5 text-[11px] font-mono ${color}`}>

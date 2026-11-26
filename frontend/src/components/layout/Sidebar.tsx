@@ -106,10 +106,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="flex items-center justify-between px-2 py-2 border-b border-[var(--border-subtle)] gap-2">
             {!isCompact && (
               <div className="flex items-center gap-2 min-w-0 flex-1">
-                <div className="rounded-md bg-[#05070A] border border-[var(--border-subtle)] px-1.5 py-0.5 flex items-center min-w-0">
+                <div className="rounded-md bg-[var(--bg-main)] border border-[var(--border-subtle)] px-1.5 py-0.5 flex items-center min-w-0">
                   <SharpLogo variant="sidebar" />
                 </div>
-                <span className="text-[10px] font-mono text-[#34D399] uppercase tracking-wider shrink-0">
+                <span className="text-[10px] font-mono text-[#B0D4B8] uppercase tracking-wider shrink-0">
                   AIOPS
                 </span>
               </div>
@@ -149,7 +149,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               return (
                 <div key={section.title} className="space-y-1">
                   {!isCompact && (
-                    <div className="px-3 pb-1 text-[10px] font-mono uppercase tracking-widest text-[#64748B]">
+                    <div className="px-3 pb-1 text-[10px] font-mono uppercase tracking-widest text-[var(--text-muted)]">
                       {section.title}
                     </div>
                   )}
@@ -172,7 +172,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               isCompact ? 'justify-center px-2' : 'gap-3 px-3'
                             } py-2 rounded-lg text-[13px] font-medium transition-colors ${
                               isActive
-                                ? 'bg-[#10B981]/12 text-[#34D399] border border-[#10B981]/30'
+                                ? 'bg-[#5D7B6F]/25 text-[#EAE7D6] border border-[#A4C3A2]/40'
                                 : 'text-[var(--text-muted)] border border-transparent hover:text-[var(--text-main)] hover:bg-[var(--bg-elevated)]'
                             }`
                           }
@@ -182,13 +182,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               {isActive && !isCompact && (
                                 <span
                                   aria-hidden="true"
-                                  className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r bg-[#10B981]"
+                                  className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r bg-[#A4C3A2]"
                                 />
                               )}
                               <Icon
                                 className={`w-4 h-4 shrink-0 ${
                                   isActive
-                                    ? 'text-[#34D399]'
+                                    ? 'text-[#B0D4B8]'
                                     : 'text-[var(--text-muted)] group-hover:text-[var(--text-main)]'
                                 }`}
                               />
@@ -211,10 +211,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className="p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-xs text-[var(--text-muted)] space-y-1.5">
               <div className="flex items-center justify-between text-[var(--text-main)] font-medium">
                 <span className="flex items-center gap-1.5">
-                  <Activity className="w-3.5 h-3.5 text-[#34D399]" />
+                  <Activity className="w-3.5 h-3.5 text-[#B0D4B8]" />
                   <span className="text-[11px]">Autonomous Loop</span>
                 </span>
-                <span className="inline-flex items-center gap-1 text-[10px] bg-[#10B981]/10 text-[#34D399] px-1.5 py-0.5 rounded border border-[#10B981]/30 font-mono">
+                <span className="inline-flex items-center gap-1 text-[10px] bg-[#B0D4B8]/15 text-[#B0D4B8] px-1.5 py-0.5 rounded border border-[#B0D4B8]/35 font-mono">
                   <CheckCircle2 className="w-2.5 h-2.5" />
                   ACTIVE
                 </span>
@@ -237,7 +237,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
                 <div
                   className={`text-[10px] font-mono ${
-                    isAdmin ? 'text-[#F59E0B]' : 'text-[#38BDF8]'
+                    isAdmin ? 'text-[#EAE7D6]' : 'text-[#D7F9FA]'
                   }`}
                 >
                   {isAdmin ? 'ROLE_ADMIN' : 'ROLE_OPERATOR'}
@@ -249,7 +249,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClick={logout}
               title="Sign Out"
               aria-label="Sign Out"
-              className="p-1.5 rounded-md text-[var(--text-muted)] hover:text-[#F43F5E] hover:bg-[var(--bg-card)] transition-colors"
+              className="p-1.5 rounded-md text-[var(--text-muted)] hover:text-[#EAE7D6] hover:bg-[var(--bg-card)] transition-colors"
             >
               <LogOut className="w-4 h-4" />
             </button>

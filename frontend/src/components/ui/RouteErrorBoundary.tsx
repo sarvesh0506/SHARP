@@ -20,9 +20,9 @@ export class RouteErrorBoundary extends React.Component<
       return (
         <div
           role="alert"
-          className="sharp-card border-[#F43F5E]/35 p-8 max-w-md mx-auto my-12 text-center space-y-4"
+          className="sharp-card border-[#EAE7D6]/35 p-8 max-w-md mx-auto my-12 text-center space-y-4"
         >
-          <div className="w-10 h-10 rounded-xl bg-[#F43F5E]/10 border border-[#F43F5E]/30 text-[#F43F5E] flex items-center justify-center mx-auto">
+          <div className="w-10 h-10 rounded-xl bg-[#EAE7D6]/10 border border-[#EAE7D6]/30 text-[#EAE7D6] flex items-center justify-center mx-auto">
             <AlertTriangle className="w-5 h-5" />
           </div>
           <h2 className="text-sm font-semibold text-[var(--text-main)]">

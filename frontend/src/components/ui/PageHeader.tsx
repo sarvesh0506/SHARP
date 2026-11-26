@@ -42,7 +42,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
           >
             <RefreshCw
               className={`w-3.5 h-3.5 ${
-                isRefreshing ? 'animate-spin text-[#10B981] motion-reduce:animate-none' : ''
+                isRefreshing ? 'animate-spin text-[#5D7B6F] motion-reduce:animate-none' : ''
               }`}
             />
             <span>Refresh</span>

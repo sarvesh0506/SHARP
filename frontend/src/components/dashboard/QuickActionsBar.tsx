@@ -12,14 +12,14 @@ import {
 } from 'lucide-react';
 
 const QUICK_ACTIONS = [
-  { label: 'Infrastructure', to: '/servers', icon: Server, accent: 'text-[#34D399]' },
-  { label: 'System Metrics', to: '/monitoring/system', icon: Activity, accent: 'text-[#38BDF8]' },
-  { label: 'Incidents', to: '/incidents', icon: AlertTriangle, accent: 'text-[#F43F5E]' },
-  { label: 'Perform RCA', to: '/diagnosis', icon: Stethoscope, accent: 'text-[#F59E0B]' },
-  { label: 'Recovery Mgmt', to: '/recovery', icon: ShieldCheck, accent: 'text-[#34D399]' },
-  { label: 'Recovery History', to: '/recovery/history', icon: History, accent: 'text-[#38BDF8]' },
-  { label: 'Analytics', to: '/analytics', icon: BarChart3, accent: 'text-[#38BDF8]' },
-  { label: 'Live Events', to: '/events', icon: Radio, accent: 'text-[#34D399]' },
+  { label: 'Infrastructure', to: '/servers', icon: Server, accent: 'text-[#B0D4B8]' },
+  { label: 'System Metrics', to: '/monitoring/system', icon: Activity, accent: 'text-[#D7F9FA]' },
+  { label: 'Incidents', to: '/incidents', icon: AlertTriangle, accent: 'text-[#EAE7D6]' },
+  { label: 'Perform RCA', to: '/diagnosis', icon: Stethoscope, accent: 'text-[#EAE7D6]' },
+  { label: 'Recovery Mgmt', to: '/recovery', icon: ShieldCheck, accent: 'text-[#B0D4B8]' },
+  { label: 'Recovery History', to: '/recovery/history', icon: History, accent: 'text-[#D7F9FA]' },
+  { label: 'Analytics', to: '/analytics', icon: BarChart3, accent: 'text-[#D7F9FA]' },
+  { label: 'Live Events', to: '/events', icon: Radio, accent: 'text-[#B0D4B8]' },
 ];
 
 export const QuickActionsBar: React.FC = () => {

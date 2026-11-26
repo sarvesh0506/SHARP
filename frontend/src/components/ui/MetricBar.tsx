@@ -20,7 +20,7 @@ export const MetricBar: React.FC<MetricBarProps> = ({
   const pct = Math.min((value / max) * 100, 100);
   const barColor =
     color ??
-    (pct >= 90 ? 'bg-[#F43F5E]' : pct >= 75 ? 'bg-[#F59E0B]' : 'bg-[#10B981]');
+    (pct >= 90 ? 'bg-[#EAE7D6]' : pct >= 75 ? 'bg-[#A4C3A2]' : 'bg-[#5D7B6F]');
 
   return (
     <div>
@@ -30,9 +30,9 @@ export const MetricBar: React.FC<MetricBarProps> = ({
           <span
             className={
               pct >= 90
-                ? 'text-[#F43F5E] font-bold'
+                ? 'text-[#EAE7D6] font-bold'
                 : pct >= 75
-                ? 'text-[#F59E0B] font-bold'
+                ? 'text-[#A4C3A2] font-bold'
                 : 'text-[var(--text-main)] font-bold'
             }
           >

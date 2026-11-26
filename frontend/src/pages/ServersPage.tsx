@@ -160,10 +160,10 @@ export const ServersPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-dark-800">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-100 font-mono">
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--text-main)] font-mono">
             Infrastructure Registry
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-[var(--text-muted)] mt-1">
             Registered nodes, bare-metal / VM instances, and daemon connection status.
           </p>
         </div>
@@ -172,15 +172,15 @@ export const ServersPage: React.FC = () => {
             type="button"
             onClick={fetchServers}
             disabled={isRefreshing}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-dark-850 hover:bg-dark-800 border border-dark-700 text-xs text-slate-300 font-medium transition disabled:opacity-50"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-dark-850 hover:bg-dark-800 border border-dark-700 text-xs text-[var(--text-secondary)] font-medium transition disabled:opacity-50"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-[#7C3AED]' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-[#5D7B6F]' : ''}`} />
             Refresh
           </button>
           <button
             type="button"
             onClick={openCreateModal}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-medium shadow-md shadow-[#7C3AED]/20 transition"
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#5D7B6F] hover:bg-[#4D685D] text-white text-xs font-medium shadow-md shadow-[#5D7B6F]/20 transition"
           >
             <Plus className="w-4 h-4" />
             Register Host Node
@@ -191,12 +191,12 @@ export const ServersPage: React.FC = () => {
       {error && <ErrorBanner message={error} onRetry={fetchServers} />}
 
       {feedback && (
-        <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#34D399]/10 border border-[#34D399]/35 text-[#34D399] text-xs font-mono">
+        <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#B0D4B8]/10 border border-[#B0D4B8]/35 text-[#B0D4B8] text-xs font-mono">
           <span>{feedback}</span>
           <button
             type="button"
             onClick={() => setFeedback(null)}
-            className="p-1 rounded hover:bg-[#34D399]/15"
+            className="p-1 rounded hover:bg-[#B0D4B8]/15"
             aria-label="Dismiss feedback"
           >
             <X className="w-3.5 h-3.5" />
@@ -207,21 +207,21 @@ export const ServersPage: React.FC = () => {
       {/* Search & Status Filter */}
       <div className="bg-dark-900 border border-dark-700/80 rounded-xl p-4 shadow-lg flex flex-wrap items-center gap-3 text-xs font-mono">
         <div className="relative flex-1 min-w-[220px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)]" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search host name, IP, OS..."
             aria-label="Search servers"
-            className="w-full pl-8 pr-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-slate-200 placeholder-slate-600 focus:outline-none focus:border-[#7C3AED]"
+            className="w-full pl-8 pr-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-[var(--text-main)] placeholder-slate-600 focus:outline-none focus:border-[#5D7B6F]"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'ONLINE' | 'DEGRADED' | 'OFFLINE')}
           aria-label="Filter servers by status"
-          className="px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-slate-200 focus:outline-none focus:border-[#7C3AED]"
+          className="px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-[var(--text-main)] focus:outline-none focus:border-[#5D7B6F]"
         >
           <option value="ALL">All Statuses</option>
           <option value="ONLINE">ONLINE</option>
@@ -235,20 +235,20 @@ export const ServersPage: React.FC = () => {
               setSearch('');
               setStatusFilter('ALL');
             }}
-            className="px-3 py-2 rounded-lg bg-[#7C3AED]/15 border border-[#7C3AED]/35 text-[#A78BFA] hover:bg-[#7C3AED]/25 transition"
+            className="px-3 py-2 rounded-lg bg-[#5D7B6F]/15 border border-[#5D7B6F]/35 text-[#A4C3A2] hover:bg-[#5D7B6F]/25 transition"
           >
             Reset
           </button>
         )}
-        <span className="text-slate-500 ml-auto">
+        <span className="text-[var(--text-muted)] ml-auto">
           Showing {filteredServers.length} of {servers.length}
         </span>
       </div>
 
       {/* Servers Grid */}
       {loading ? (
-        <div className="text-center py-12 text-slate-500 font-mono text-xs bg-dark-900 border border-dark-700/80 rounded-xl">
-          <RefreshCw className="w-4 h-4 animate-spin inline mr-2 text-[#7C3AED]" />
+        <div className="text-center py-12 text-[var(--text-muted)] font-mono text-xs bg-dark-900 border border-dark-700/80 rounded-xl">
+          <RefreshCw className="w-4 h-4 animate-spin inline mr-2 text-[#5D7B6F]" />
           Discovering registered infrastructure nodes...
         </div>
       ) : filteredServers.length === 0 ? (
@@ -269,7 +269,7 @@ export const ServersPage: React.FC = () => {
                     setSearch('');
                     setStatusFilter('ALL');
                   }}
-                  className="px-3.5 py-2 rounded-lg text-xs font-mono bg-[#7C3AED]/15 border border-[#7C3AED]/35 text-[#A78BFA] hover:bg-[#7C3AED]/25 transition"
+                  className="px-3.5 py-2 rounded-lg text-xs font-mono bg-[#5D7B6F]/15 border border-[#5D7B6F]/35 text-[#A4C3A2] hover:bg-[#5D7B6F]/25 transition"
                 >
                   Clear Filters
                 </button>
@@ -287,14 +287,14 @@ export const ServersPage: React.FC = () => {
               <div>
                 <div className="flex items-center justify-between mb-3 gap-2">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="p-2 rounded-lg bg-dark-800 border border-dark-700 text-[#A78BFA] shrink-0">
+                    <div className="p-2 rounded-lg bg-dark-800 border border-dark-700 text-[#A4C3A2] shrink-0">
                       <Server className="w-4 h-4" />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="text-sm font-semibold text-slate-200 font-mono truncate">
+                      <h3 className="text-sm font-semibold text-[var(--text-main)] font-mono truncate">
                         {server.hostName}
                       </h3>
-                      <p className="text-[11px] font-mono text-slate-500">{server.ipAddress}</p>
+                      <p className="text-[11px] font-mono text-[var(--text-muted)]">{server.ipAddress}</p>
                     </div>
                   </div>
                   <StatusBadge status={server.status} />
@@ -302,45 +302,45 @@ export const ServersPage: React.FC = () => {
 
                 <div className="space-y-3 pt-3 border-t border-dark-800 text-xs">
                   <div>
-                    <div className="flex justify-between text-slate-400 mb-1 font-mono text-[11px]">
+                    <div className="flex justify-between text-[var(--text-muted)] mb-1 font-mono text-[11px]">
                       <span className="flex items-center gap-1">
-                        <Cpu className="w-3 h-3 text-[#A78BFA]" /> CPU Load
+                        <Cpu className="w-3 h-3 text-[#A4C3A2]" /> CPU Load
                       </span>
                       <span>{server.cpuUsage ?? 0}%</span>
                     </div>
                     <div className="w-full bg-dark-800 h-1.5 rounded-full overflow-hidden">
                       <div
-                        className="bg-[#7C3AED] h-full rounded-full"
+                        className="bg-[#5D7B6F] h-full rounded-full"
                         style={{ width: `${Math.min(100, server.cpuUsage ?? 0)}%` }}
                       />
                     </div>
                   </div>
 
                   <div>
-                    <div className="flex justify-between text-slate-400 mb-1 font-mono text-[11px]">
+                    <div className="flex justify-between text-[var(--text-muted)] mb-1 font-mono text-[11px]">
                       <span className="flex items-center gap-1">
-                        <HardDrive className="w-3 h-3 text-cyan-400" /> Memory
+                        <HardDrive className="w-3 h-3 text-[#D7F9FA]" /> Memory
                       </span>
                       <span>{server.memoryUsage ?? 0}%</span>
                     </div>
                     <div className="w-full bg-dark-800 h-1.5 rounded-full overflow-hidden">
                       <div
-                        className="bg-[#22D3EE] h-full rounded-full"
+                        className="bg-[#D7F9FA] h-full rounded-full"
                         style={{ width: `${Math.min(100, server.memoryUsage ?? 0)}%` }}
                       />
                     </div>
                   </div>
 
                   <div>
-                    <div className="flex justify-between text-slate-400 mb-1 font-mono text-[11px]">
+                    <div className="flex justify-between text-[var(--text-muted)] mb-1 font-mono text-[11px]">
                       <span className="flex items-center gap-1">
-                        <Terminal className="w-3 h-3 text-emerald-400" /> Disk
+                        <Terminal className="w-3 h-3 text-[#B0D4B8]" /> Disk
                       </span>
                       <span>{server.diskUsage ?? 0}%</span>
                     </div>
                     <div className="w-full bg-dark-800 h-1.5 rounded-full overflow-hidden">
                       <div
-                        className="bg-[#34D399] h-full rounded-full"
+                        className="bg-[#B0D4B8] h-full rounded-full"
                         style={{ width: `${Math.min(100, server.diskUsage ?? 0)}%` }}
                       />
                     </div>
@@ -349,7 +349,7 @@ export const ServersPage: React.FC = () => {
               </div>
 
               <div className="pt-4 mt-4 border-t border-dark-800 space-y-3">
-                <div className="flex items-center justify-between text-[11px] font-mono text-slate-500">
+                <div className="flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)]">
                   <span className="truncate">OS: {server.osType}</span>
                   <span className="shrink-0">Agent: v{server.agentVersion}</span>
                 </div>
@@ -358,7 +358,7 @@ export const ServersPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setDetailServer(server)}
-                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-dark-850 border border-dark-700 text-[11px] font-mono text-slate-300 hover:text-[#22D3EE] hover:border-[#22D3EE]/40 transition"
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-dark-850 border border-dark-700 text-[11px] font-mono text-[var(--text-secondary)] hover:text-[#D7F9FA] hover:border-[#D7F9FA]/40 transition"
                     title="View server details"
                   >
                     <Eye className="w-3.5 h-3.5" />
@@ -367,7 +367,7 @@ export const ServersPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => openEditModal(server)}
-                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-dark-850 border border-dark-700 text-[11px] font-mono text-slate-300 hover:text-[#A78BFA] hover:border-[#7C3AED]/40 transition"
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-dark-850 border border-dark-700 text-[11px] font-mono text-[var(--text-secondary)] hover:text-[#A4C3A2] hover:border-[#5D7B6F]/40 transition"
                     title="Edit server configuration"
                   >
                     <Edit3 className="w-3.5 h-3.5" />
@@ -377,7 +377,7 @@ export const ServersPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setDeletingServer(server)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#F43F5E]/10 border border-[#F43F5E]/30 text-[11px] font-mono text-[#F43F5E] hover:bg-[#F43F5E]/20 transition"
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#EAE7D6]/10 border border-[#EAE7D6]/30 text-[11px] font-mono text-[#EAE7D6] hover:bg-[#EAE7D6]/20 transition"
                       title="Delete server"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -400,15 +400,15 @@ export const ServersPage: React.FC = () => {
         >
           <div className="bg-dark-900 border border-dark-700 rounded-xl p-6 max-w-md w-full shadow-2xl">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-slate-100 font-mono flex items-center gap-2">
-                <Server className="w-5 h-5 text-[#A78BFA]" />
+              <h2 className="text-lg font-bold text-[var(--text-main)] font-mono flex items-center gap-2">
+                <Server className="w-5 h-5 text-[#A4C3A2]" />
                 {editingServer ? `Edit Host #${editingServer.id}` : 'Register Monitored Host'}
               </h2>
               <button
                 type="button"
                 disabled={submitting}
                 onClick={() => setShowFormModal(false)}
-                className="p-1 rounded text-slate-400 hover:text-slate-200"
+                className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-main)]"
                 aria-label="Close modal"
               >
                 <X className="w-4 h-4" />
@@ -416,14 +416,14 @@ export const ServersPage: React.FC = () => {
             </div>
 
             {formError && (
-              <div className="mb-4 p-3 rounded-lg bg-[#F43F5E]/10 border border-[#F43F5E]/40 text-[#F43F5E] text-xs">
+              <div className="mb-4 p-3 rounded-lg bg-[#EAE7D6]/10 border border-[#EAE7D6]/40 text-[#EAE7D6] text-xs">
                 {formError}
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4 text-xs">
               <div>
-                <label htmlFor="server-host-name" className="block text-slate-300 font-medium mb-1">
+                <label htmlFor="server-host-name" className="block text-[var(--text-secondary)] font-medium mb-1">
                   Host Name *
                 </label>
                 <input
@@ -432,13 +432,13 @@ export const ServersPage: React.FC = () => {
                   required
                   value={formData.hostName}
                   onChange={(e) => setFormData({ ...formData, hostName: e.target.value })}
-                  className="w-full bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-[#7C3AED] font-mono"
+                  className="w-full bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-[var(--text-main)] focus:outline-none focus:border-[#5D7B6F] font-mono"
                   placeholder="e.g. prod-node-03.infra.sharp"
                 />
               </div>
 
               <div>
-                <label htmlFor="server-ip" className="block text-slate-300 font-medium mb-1">
+                <label htmlFor="server-ip" className="block text-[var(--text-secondary)] font-medium mb-1">
                   IP Address *
                 </label>
                 <input
@@ -447,13 +447,13 @@ export const ServersPage: React.FC = () => {
                   required
                   value={formData.ipAddress}
                   onChange={(e) => setFormData({ ...formData, ipAddress: e.target.value })}
-                  className="w-full bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-[#7C3AED] font-mono"
+                  className="w-full bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-[var(--text-main)] focus:outline-none focus:border-[#5D7B6F] font-mono"
                   placeholder="e.g. 192.168.1.10"
                 />
               </div>
 
               <div>
-                <label htmlFor="server-os" className="block text-slate-300 font-medium mb-1">
+                <label htmlFor="server-os" className="block text-[var(--text-secondary)] font-medium mb-1">
                   Operating System
                 </label>
                 <input
@@ -461,12 +461,12 @@ export const ServersPage: React.FC = () => {
                   type="text"
                   value={formData.osType}
                   onChange={(e) => setFormData({ ...formData, osType: e.target.value })}
-                  className="w-full bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-[#7C3AED] font-mono"
+                  className="w-full bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-[var(--text-main)] focus:outline-none focus:border-[#5D7B6F] font-mono"
                 />
               </div>
 
               <div>
-                <label htmlFor="server-agent-ver" className="block text-slate-300 font-medium mb-1">
+                <label htmlFor="server-agent-ver" className="block text-[var(--text-secondary)] font-medium mb-1">
                   Monitoring Agent Version
                 </label>
                 <input
@@ -474,13 +474,13 @@ export const ServersPage: React.FC = () => {
                   type="text"
                   value={formData.agentVersion}
                   onChange={(e) => setFormData({ ...formData, agentVersion: e.target.value })}
-                  className="w-full bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-[#7C3AED] font-mono"
+                  className="w-full bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-[var(--text-main)] focus:outline-none focus:border-[#5D7B6F] font-mono"
                 />
               </div>
 
               {editingServer && (
                 <div>
-                  <label htmlFor="server-status" className="block text-slate-300 font-medium mb-1">
+                  <label htmlFor="server-status" className="block text-[var(--text-secondary)] font-medium mb-1">
                     Node Status
                   </label>
                   <select
@@ -492,7 +492,7 @@ export const ServersPage: React.FC = () => {
                         status: e.target.value as 'ONLINE' | 'DEGRADED' | 'OFFLINE',
                       })
                     }
-                    className="w-full bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-[#7C3AED] font-mono"
+                    className="w-full bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-[var(--text-main)] focus:outline-none focus:border-[#5D7B6F] font-mono"
                   >
                     <option value="ONLINE">ONLINE</option>
                     <option value="DEGRADED">DEGRADED</option>
@@ -506,14 +506,14 @@ export const ServersPage: React.FC = () => {
                   type="button"
                   disabled={submitting}
                   onClick={() => setShowFormModal(false)}
-                  className="px-3 py-1.5 rounded-lg bg-dark-800 text-slate-300 hover:bg-dark-700 transition disabled:opacity-50"
+                  className="px-3 py-1.5 rounded-lg bg-dark-800 text-[var(--text-secondary)] hover:bg-dark-700 transition disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-4 py-1.5 rounded-lg bg-[#7C3AED] text-white font-medium hover:bg-[#6D28D9] transition disabled:opacity-50"
+                  className="px-4 py-1.5 rounded-lg bg-[#5D7B6F] text-white font-medium hover:bg-[#4D685D] transition disabled:opacity-50"
                 >
                   {submitting
                     ? editingServer
@@ -543,15 +543,15 @@ export const ServersPage: React.FC = () => {
           >
             <div className="flex items-center justify-between border-b border-dark-800 pb-3">
               <div className="flex items-center gap-2">
-                <Server className="w-5 h-5 text-[#22D3EE]" />
-                <h2 className="text-sm font-bold text-slate-100 font-mono">
+                <Server className="w-5 h-5 text-[#D7F9FA]" />
+                <h2 className="text-sm font-bold text-[var(--text-main)] font-mono">
                   {detailServer.hostName}
                 </h2>
               </div>
               <button
                 type="button"
                 onClick={() => setDetailServer(null)}
-                className="p-1 rounded text-slate-400 hover:text-slate-200"
+                className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-main)]"
                 aria-label="Close server details"
               >
                 <X className="w-4 h-4" />
@@ -559,40 +559,40 @@ export const ServersPage: React.FC = () => {
             </div>
             <dl className="grid grid-cols-2 gap-3 text-xs font-mono">
               <div>
-                <dt className="text-slate-500">Server ID</dt>
-                <dd className="text-slate-200">#{detailServer.id}</dd>
+                <dt className="text-[var(--text-muted)]">Server ID</dt>
+                <dd className="text-[var(--text-main)]">#{detailServer.id}</dd>
               </div>
               <div>
-                <dt className="text-slate-500">Status</dt>
+                <dt className="text-[var(--text-muted)]">Status</dt>
                 <dd><StatusBadge status={detailServer.status} /></dd>
               </div>
               <div>
-                <dt className="text-slate-500">IP Address</dt>
-                <dd className="text-slate-200">{detailServer.ipAddress}</dd>
+                <dt className="text-[var(--text-muted)]">IP Address</dt>
+                <dd className="text-[var(--text-main)]">{detailServer.ipAddress}</dd>
               </div>
               <div>
-                <dt className="text-slate-500">OS Type</dt>
-                <dd className="text-slate-200">{detailServer.osType}</dd>
+                <dt className="text-[var(--text-muted)]">OS Type</dt>
+                <dd className="text-[var(--text-main)]">{detailServer.osType}</dd>
               </div>
               <div>
-                <dt className="text-slate-500">Agent Version</dt>
-                <dd className="text-slate-200">v{detailServer.agentVersion}</dd>
+                <dt className="text-[var(--text-muted)]">Agent Version</dt>
+                <dd className="text-[var(--text-main)]">v{detailServer.agentVersion}</dd>
               </div>
               <div>
-                <dt className="text-slate-500">CPU / Mem / Disk</dt>
-                <dd className="text-slate-200">
+                <dt className="text-[var(--text-muted)]">CPU / Mem / Disk</dt>
+                <dd className="text-[var(--text-main)]">
                   {detailServer.cpuUsage ?? 0}% / {detailServer.memoryUsage ?? 0}% / {detailServer.diskUsage ?? 0}%
                 </dd>
               </div>
               <div className="col-span-2">
-                <dt className="text-slate-500">Last Seen</dt>
-                <dd className="text-slate-300">
+                <dt className="text-[var(--text-muted)]">Last Seen</dt>
+                <dd className="text-[var(--text-secondary)]">
                   {detailServer.lastSeen ? new Date(detailServer.lastSeen).toLocaleString() : '—'}
                 </dd>
               </div>
               <div className="col-span-2">
-                <dt className="text-slate-500">Created At</dt>
-                <dd className="text-slate-300">
+                <dt className="text-[var(--text-muted)]">Created At</dt>
+                <dd className="text-[var(--text-secondary)]">
                   {detailServer.createdAt ? new Date(detailServer.createdAt).toLocaleString() : '—'}
                 </dd>
               </div>

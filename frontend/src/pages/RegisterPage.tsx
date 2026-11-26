@@ -54,7 +54,7 @@ export const RegisterPage: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen bg-[#05070A] text-white flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden"
+      className="min-h-screen bg-[#0D1311] text-white flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden"
       style={{
         backgroundImage:
           'linear-gradient(to right, rgba(0, 217, 255, 0.04) 1px, transparent 1px), linear-gradient(to bottom, rgba(0, 217, 255, 0.04) 1px, transparent 1px)',
@@ -73,25 +73,25 @@ export const RegisterPage: React.FC = () => {
       <div className="relative z-10 max-w-md w-full space-y-6">
         {/* Centered SHARP Logo + Heading */}
         <div className="text-center space-y-3">
-          <div className="mx-auto w-full max-w-[300px] rounded-xl overflow-hidden bg-[#05070A]">
+          <div className="mx-auto w-full max-w-[300px] rounded-xl overflow-hidden bg-[#0D1311]">
             <SharpLogo variant="register" className="mx-auto" />
           </div>
           <div className="space-y-1">
             <h1 className="text-2xl font-bold font-mono tracking-tight text-white">
               Create SHARP Identity
             </h1>
-            <p className="text-xs text-[#94A3B8]">
+            <p className="text-xs text-[#98AB9C]">
               Register new administrator or operator credentials.
             </p>
           </div>
         </div>
 
         {/* Registration Card */}
-        <div className="bg-[#10151D] border border-[#1E293B] rounded-2xl p-6 sm:p-8 shadow-2xl">
+        <div className="bg-[#111916] border border-[#2A3D36] rounded-2xl p-6 sm:p-8 shadow-2xl">
           {error && (
             <div
               role="alert"
-              className="mb-4 p-3 rounded-lg bg-[#F43F5E]/10 border border-[#F43F5E]/40 text-[#F43F5E] text-xs flex items-center gap-2"
+              className="mb-4 p-3 rounded-lg bg-[#EAE7D6]/10 border border-[#EAE7D6]/40 text-[#EAE7D6] text-xs flex items-center gap-2"
             >
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
@@ -104,14 +104,14 @@ export const RegisterPage: React.FC = () => {
                 Username *
               </label>
               <div className="relative">
-                <User className="w-4 h-4 text-[#94A3B8] absolute left-3 top-2.5" />
+                <User className="w-4 h-4 text-[#98AB9C] absolute left-3 top-2.5" />
                 <input
                   id="reg-username"
                   type="text"
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-[#05070A] border border-[#1E293B] rounded-lg pl-9 pr-3 py-2.5 text-white placeholder-[#64748B] focus:outline-none focus:border-[#00D9FF] transition-colors"
+                  className="w-full bg-[#0D1311] border border-[#2A3D36] rounded-lg pl-9 pr-3 py-2.5 text-white placeholder-[#7D8F82] focus:outline-none focus:border-[#D7F9FA] transition-colors"
                   placeholder="e.g. ops-lead"
                 />
               </div>
@@ -122,14 +122,14 @@ export const RegisterPage: React.FC = () => {
                 Email Address *
               </label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-[#94A3B8] absolute left-3 top-2.5" />
+                <Mail className="w-4 h-4 text-[#98AB9C] absolute left-3 top-2.5" />
                 <input
                   id="reg-email"
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[#05070A] border border-[#1E293B] rounded-lg pl-9 pr-3 py-2.5 text-white placeholder-[#64748B] focus:outline-none focus:border-[#00D9FF] transition-colors"
+                  className="w-full bg-[#0D1311] border border-[#2A3D36] rounded-lg pl-9 pr-3 py-2.5 text-white placeholder-[#7D8F82] focus:outline-none focus:border-[#D7F9FA] transition-colors"
                   placeholder="ops@company.com"
                 />
               </div>
@@ -140,33 +140,33 @@ export const RegisterPage: React.FC = () => {
                 Password *
               </label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-[#94A3B8] absolute left-3 top-2.5" />
+                <Lock className="w-4 h-4 text-[#98AB9C] absolute left-3 top-2.5" />
                 <input
                   id="reg-password"
                   type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-[#05070A] border border-[#1E293B] rounded-lg pl-9 pr-10 py-2.5 text-white placeholder-[#64748B] focus:outline-none focus:border-[#00D9FF] transition-colors font-mono"
+                  className="w-full bg-[#0D1311] border border-[#2A3D36] rounded-lg pl-9 pr-10 py-2.5 text-white placeholder-[#7D8F82] focus:outline-none focus:border-[#D7F9FA] transition-colors font-mono"
                   placeholder="At least 6 characters"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  className="absolute right-2.5 top-2 p-1 text-[#94A3B8] hover:text-[#00D9FF] transition-colors"
+                  className="absolute right-2.5 top-2 p-1 text-[#98AB9C] hover:text-[#D7F9FA] transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
-            <div className="p-3 rounded-lg bg-[#05070A] border border-[#1E293B] space-y-1">
+            <div className="p-3 rounded-lg bg-[#0D1311] border border-[#2A3D36] space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-[#94A3B8] font-medium">Assigned Role</span>
-                <span className="font-mono text-[#00D9FF] font-semibold">ROLE_OPERATOR</span>
+                <span className="text-[#98AB9C] font-medium">Assigned Role</span>
+                <span className="font-mono text-[#D7F9FA] font-semibold">ROLE_OPERATOR</span>
               </div>
-              <p className="text-[11px] text-[#64748B]">
+              <p className="text-[11px] text-[#7D8F82]">
                 Public registration provisions Operator access. Administrator privileges require authorization by an existing admin.
               </p>
             </div>
@@ -174,7 +174,7 @@ export const RegisterPage: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 px-4 rounded-lg bg-[#00D9FF] hover:bg-[#33E1FF] text-[#05070A] font-semibold transition-all flex items-center justify-center gap-2 mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-2.5 px-4 rounded-lg bg-[#D7F9FA] hover:bg-[#D7F9FA] text-[#0D1311] font-semibold transition-all flex items-center justify-center gap-2 mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
@@ -190,9 +190,9 @@ export const RegisterPage: React.FC = () => {
             </button>
           </form>
 
-          <div className="mt-6 pt-5 border-t border-[#1E293B] text-center text-xs text-[#94A3B8]">
+          <div className="mt-6 pt-5 border-t border-[#2A3D36] text-center text-xs text-[#98AB9C]">
             Already registered?{' '}
-            <Link to="/login" className="text-[#00D9FF] hover:underline font-medium">
+            <Link to="/login" className="text-[#D7F9FA] hover:underline font-medium">
               Return to Login
             </Link>
           </div>

@@ -50,7 +50,7 @@ export const LoginPage: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen bg-[#05070A] text-white flex items-center justify-center p-4 sm:p-6 lg:p-10 relative overflow-hidden"
+      className="min-h-screen bg-[#0D1311] text-white flex items-center justify-center p-4 sm:p-6 lg:p-10 relative overflow-hidden"
       style={{
         backgroundImage:
           'linear-gradient(to right, rgba(0, 217, 255, 0.04) 1px, transparent 1px), linear-gradient(to bottom, rgba(0, 217, 255, 0.04) 1px, transparent 1px)',
@@ -69,19 +69,19 @@ export const LoginPage: React.FC = () => {
       <div className="relative z-10 max-w-5xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
         {/* Left: Branding Section */}
         <div className="lg:col-span-6 flex flex-col items-center lg:items-start text-center lg:text-left space-y-5">
-          <div className="w-full max-w-md rounded-2xl overflow-hidden bg-[#05070A]">
+          <div className="w-full max-w-md rounded-2xl overflow-hidden bg-[#0D1311]">
             <SharpLogo variant="auth" className="mx-auto lg:mx-0" />
           </div>
 
           <div className="space-y-2 max-w-md">
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-[#10151D] border border-[#00D9FF]/25 text-[11px] font-mono text-[#00D9FF] tracking-wider uppercase">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#00D9FF]" />
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-[#111916] border border-[#D7F9FA]/25 text-[11px] font-mono text-[#D7F9FA] tracking-wider uppercase">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#D7F9FA]" />
               SHARP
             </div>
             <h1 className="text-xl sm:text-2xl font-semibold text-white tracking-tight">
               Self-Healing Autonomous Resilience Platform
             </h1>
-            <p className="text-sm text-[#94A3B8] leading-relaxed">
+            <p className="text-sm text-[#98AB9C] leading-relaxed">
               Intelligent infrastructure monitoring, autonomous fault detection, root cause analysis, and self-healing recovery.
             </p>
           </div>
@@ -89,10 +89,10 @@ export const LoginPage: React.FC = () => {
 
         {/* Right: Login Card */}
         <div className="lg:col-span-6 w-full max-w-md mx-auto lg:ml-auto">
-          <div className="bg-[#10151D] border border-[#1E293B] rounded-2xl p-6 sm:p-8 shadow-2xl">
+          <div className="bg-[#111916] border border-[#2A3D36] rounded-2xl p-6 sm:p-8 shadow-2xl">
             <div className="mb-6">
               <h2 className="text-lg font-semibold text-white">Sign in to SHARP</h2>
-              <p className="text-xs text-[#94A3B8] mt-1">
+              <p className="text-xs text-[#98AB9C] mt-1">
                 Authenticate with your operator or administrator credentials.
               </p>
             </div>
@@ -100,7 +100,7 @@ export const LoginPage: React.FC = () => {
             {error && (
               <div
                 role="alert"
-                className="mb-5 p-3 rounded-lg bg-[#F43F5E]/10 border border-[#F43F5E]/40 text-[#F43F5E] text-xs flex items-center gap-2"
+                className="mb-5 p-3 rounded-lg bg-[#EAE7D6]/10 border border-[#EAE7D6]/40 text-[#EAE7D6] text-xs flex items-center gap-2"
               >
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{error}</span>
@@ -113,7 +113,7 @@ export const LoginPage: React.FC = () => {
                   Username
                 </label>
                 <div className="relative">
-                  <User className="w-4 h-4 text-[#94A3B8] absolute left-3 top-2.5" />
+                  <User className="w-4 h-4 text-[#98AB9C] absolute left-3 top-2.5" />
                   <input
                     id="login-username"
                     type="text"
@@ -121,7 +121,7 @@ export const LoginPage: React.FC = () => {
                     autoComplete="username"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="w-full bg-[#05070A] border border-[#1E293B] rounded-lg pl-9 pr-3 py-2.5 text-white placeholder-[#64748B] focus:outline-none focus:border-[#00D9FF] transition-colors"
+                    className="w-full bg-[#0D1311] border border-[#2A3D36] rounded-lg pl-9 pr-3 py-2.5 text-white placeholder-[#7D8F82] focus:outline-none focus:border-[#D7F9FA] transition-colors"
                     placeholder="Enter your username"
                   />
                 </div>
@@ -132,7 +132,7 @@ export const LoginPage: React.FC = () => {
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-[#94A3B8] absolute left-3 top-2.5" />
+                  <Lock className="w-4 h-4 text-[#98AB9C] absolute left-3 top-2.5" />
                   <input
                     id="login-password"
                     type={showPassword ? 'text' : 'password'}
@@ -140,14 +140,14 @@ export const LoginPage: React.FC = () => {
                     autoComplete="current-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-[#05070A] border border-[#1E293B] rounded-lg pl-9 pr-10 py-2.5 text-white placeholder-[#64748B] focus:outline-none focus:border-[#00D9FF] transition-colors font-mono"
+                    className="w-full bg-[#0D1311] border border-[#2A3D36] rounded-lg pl-9 pr-10 py-2.5 text-white placeholder-[#7D8F82] focus:outline-none focus:border-[#D7F9FA] transition-colors font-mono"
                     placeholder="Enter your password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((prev) => !prev)}
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    className="absolute right-2.5 top-2 p-1 text-[#94A3B8] hover:text-[#00D9FF] transition-colors"
+                    className="absolute right-2.5 top-2 p-1 text-[#98AB9C] hover:text-[#D7F9FA] transition-colors"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -157,7 +157,7 @@ export const LoginPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 px-4 rounded-lg bg-[#00D9FF] hover:bg-[#33E1FF] text-[#05070A] font-semibold transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-2.5 px-4 rounded-lg bg-[#D7F9FA] hover:bg-[#D7F9FA] text-[#0D1311] font-semibold transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
@@ -173,9 +173,9 @@ export const LoginPage: React.FC = () => {
               </button>
             </form>
 
-            <div className="mt-6 pt-5 border-t border-[#1E293B] flex items-center justify-between text-xs text-[#94A3B8]">
+            <div className="mt-6 pt-5 border-t border-[#2A3D36] flex items-center justify-between text-xs text-[#98AB9C]">
               <span>New operator?</span>
-              <Link to="/register" className="text-[#00D9FF] hover:underline font-medium">
+              <Link to="/register" className="text-[#D7F9FA] hover:underline font-medium">
                 Create an account
               </Link>
             </div>

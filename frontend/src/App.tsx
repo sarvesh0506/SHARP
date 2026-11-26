@@ -61,8 +61,8 @@ const LiveEventsPage = lazy(() =>
 );
 
 const RouteFallback: React.FC = () => (
-  <div className="flex items-center justify-center h-64 text-xs font-mono text-slate-400">
-    <span className="w-5 h-5 border-2 border-[#22D3EE] border-t-transparent rounded-full animate-spin mr-3" />
+  <div className="flex items-center justify-center h-64 text-xs font-mono text-[var(--text-muted)]">
+    <span className="w-5 h-5 border-2 border-[#D7F9FA] border-t-transparent rounded-full animate-spin mr-3" />
     Loading module...
   </div>
 );

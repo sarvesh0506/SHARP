@@ -218,9 +218,9 @@ export const DashboardPage: React.FC = () => {
       : 'HEALTHY';
 
   const serverChartData = [
-    { name: 'Online', value: onlineServers, color: '#34D399' },
-    { name: 'Degraded', value: degradedServers, color: '#F59E0B' },
-    { name: 'Offline', value: offlineServers, color: '#F43F5E' },
+    { name: 'Online', value: onlineServers, color: '#B0D4B8' },
+    { name: 'Degraded', value: degradedServers, color: '#EAE7D6' },
+    { name: 'Offline', value: offlineServers, color: '#EAE7D6' },
   ].filter((d) => d.value > 0);
 
   const timelineData = metricHistory.map((m) => ({
@@ -236,7 +236,7 @@ export const DashboardPage: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64 text-[var(--text-muted)] font-mono text-sm">
-        <RefreshCw className="w-5 h-5 animate-spin mr-3 text-[#10B981] motion-reduce:animate-none" />
+        <RefreshCw className="w-5 h-5 animate-spin mr-3 text-[#5D7B6F] motion-reduce:animate-none" />
         Querying live host telemetry &amp; incident records...
       </div>
     );
@@ -254,7 +254,7 @@ export const DashboardPage: React.FC = () => {
           <p className="text-xs text-[var(--text-muted)] mt-1">
             Autonomous infrastructure observability, anomaly triage, root cause analysis, and closed-loop recovery.
             {lastUpdated && (
-              <span className="font-mono text-[#64748B] ml-2">
+              <span className="font-mono text-[#7D8F82] ml-2">
                 · Last updated {lastUpdated.toLocaleTimeString()}
               </span>
             )}
@@ -274,7 +274,7 @@ export const DashboardPage: React.FC = () => {
                 onClick={() => setTimeWindow(w)}
                 className={`px-2.5 py-1 rounded-md transition-colors ${
                   timeWindow === w
-                    ? 'bg-[#10B981]/15 text-[#34D399]'
+                    ? 'bg-[#5D7B6F]/15 text-[#B0D4B8]'
                     : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                 }`}
               >
@@ -290,7 +290,7 @@ export const DashboardPage: React.FC = () => {
           >
             <RefreshCw
               className={`w-3.5 h-3.5 ${
-                isRefreshing ? 'animate-spin text-[#10B981] motion-reduce:animate-none' : ''
+                isRefreshing ? 'animate-spin text-[#5D7B6F] motion-reduce:animate-none' : ''
               }`}
             />
             <span>Refresh</span>
@@ -320,7 +320,7 @@ export const DashboardPage: React.FC = () => {
             value={servers.length}
             subtitle={`${onlineServers} online · ${offlineServers} offline`}
             icon={Server}
-            color="text-[#34D399]"
+            color="text-[#B0D4B8]"
           />
         </Link>
         <Link to="/applications" className="block">
@@ -329,7 +329,7 @@ export const DashboardPage: React.FC = () => {
             value={`${healthyApps}/${totalApps}`}
             subtitle={degradedApps > 0 ? `${degradedApps} degraded` : 'All registered healthy'}
             icon={Layers}
-            color="text-[#38BDF8]"
+            color="text-[#D7F9FA]"
           />
         </Link>
         <Link to="/incidents" className="block">
@@ -338,7 +338,7 @@ export const DashboardPage: React.FC = () => {
             value={summary?.activeIncidents ?? 0}
             subtitle={`${criticalIncidents} critical severity`}
             icon={AlertTriangle}
-            color={criticalIncidents > 0 ? 'text-[#F43F5E]' : 'text-[#F59E0B]'}
+            color={criticalIncidents > 0 ? 'text-[#EAE7D6]' : 'text-[#EAE7D6]'}
           />
         </Link>
         <Link to="/detection" className="block">
@@ -347,7 +347,7 @@ export const DashboardPage: React.FC = () => {
             value={activeAnomalies}
             subtitle={`${anomalies.length} total recorded`}
             icon={Radar}
-            color={activeAnomalies > 0 ? 'text-[#F59E0B]' : 'text-[#38BDF8]'}
+            color={activeAnomalies > 0 ? 'text-[#EAE7D6]' : 'text-[#D7F9FA]'}
           />
         </Link>
         <Link to="/recovery/history" className="block">
@@ -360,7 +360,7 @@ export const DashboardPage: React.FC = () => {
             }
             subtitle={`${recoveries.length} total executions`}
             icon={CheckCircle2}
-            color="text-[#34D399]"
+            color="text-[#B0D4B8]"
           />
         </Link>
         <Link to="/analytics" className="block">
@@ -373,7 +373,7 @@ export const DashboardPage: React.FC = () => {
             }
             subtitle="Mean time to resolve"
             icon={Clock}
-            color="text-[#38BDF8]"
+            color="text-[#D7F9FA]"
           />
         </Link>
       </section>
@@ -392,7 +392,7 @@ export const DashboardPage: React.FC = () => {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <h2 id="resource-heading" className="sharp-section-title flex items-center gap-2">
-                <Cpu className="w-4 h-4 text-[#38BDF8]" />
+                <Cpu className="w-4 h-4 text-[#D7F9FA]" />
                 <span>Host Resource Intelligence ({timeWindow})</span>
               </h2>
               <p className="text-xs text-[var(--text-muted)]">
@@ -403,7 +403,7 @@ export const DashboardPage: React.FC = () => {
               {collectorStatus && <StatusBadge status={collectorStatus.status} />}
               <Link
                 to="/monitoring/system"
-                className="text-xs font-mono text-[#34D399] hover:underline inline-flex items-center gap-1"
+                className="text-xs font-mono text-[#B0D4B8] hover:underline inline-flex items-center gap-1"
               >
                 <span>System Monitoring</span>
                 <ArrowRight className="w-3 h-3" />
@@ -421,29 +421,29 @@ export const DashboardPage: React.FC = () => {
                 <AreaChart data={timelineData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="cmdCpuGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.32} />
-                      <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#5D7B6F" stopOpacity={0.32} />
+                      <stop offset="95%" stopColor="#5D7B6F" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="cmdMemGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#38BDF8" stopOpacity={0.28} />
-                      <stop offset="95%" stopColor="#38BDF8" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#D7F9FA" stopOpacity={0.28} />
+                      <stop offset="95%" stopColor="#D7F9FA" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" />
-                  <XAxis dataKey="time" stroke="#8B9BB4" fontSize={10} />
-                  <YAxis stroke="#8B9BB4" fontSize={10} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#2A3D36" />
+                  <XAxis dataKey="time" stroke="#98AB9C" fontSize={10} />
+                  <YAxis stroke="#98AB9C" fontSize={10} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#192230',
-                      borderColor: '#334155',
+                      backgroundColor: '#1D2B26',
+                      borderColor: '#3D544B',
                       borderRadius: '8px',
                       fontSize: '12px',
-                      color: '#F1F5F9',
+                      color: '#EAE7D6',
                     }}
                   />
-                  <Legend wrapperStyle={{ fontSize: 11, color: '#8B9BB4' }} />
-                  <Area type="monotone" dataKey="cpu" name="CPU %" stroke="#10B981" strokeWidth={2} fillOpacity={1} fill="url(#cmdCpuGrad)" connectNulls />
-                  <Area type="monotone" dataKey="memory" name="Memory %" stroke="#38BDF8" strokeWidth={2} fillOpacity={1} fill="url(#cmdMemGrad)" connectNulls />
+                  <Legend wrapperStyle={{ fontSize: 11, color: '#98AB9C' }} />
+                  <Area type="monotone" dataKey="cpu" name="CPU %" stroke="#5D7B6F" strokeWidth={2} fillOpacity={1} fill="url(#cmdCpuGrad)" connectNulls />
+                  <Area type="monotone" dataKey="memory" name="Memory %" stroke="#D7F9FA" strokeWidth={2} fillOpacity={1} fill="url(#cmdMemGrad)" connectNulls />
                 </AreaChart>
               </ResponsiveContainer>
             )}
@@ -451,17 +451,17 @@ export const DashboardPage: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-[var(--border-subtle)]">
             {latestMetric?.cpuPercent != null ? (
-              <MetricBar label="Host CPU" value={latestMetric.cpuPercent} color="bg-[#10B981]" />
+              <MetricBar label="Host CPU" value={latestMetric.cpuPercent} color="bg-[#5D7B6F]" />
             ) : (
               <div className="text-xs font-mono text-[var(--text-muted)]">Host CPU: Awaiting telemetry</div>
             )}
             {latestMetric?.memoryPercent != null ? (
-              <MetricBar label="Host Memory" value={latestMetric.memoryPercent} color="bg-[#38BDF8]" />
+              <MetricBar label="Host Memory" value={latestMetric.memoryPercent} color="bg-[#D7F9FA]" />
             ) : (
               <div className="text-xs font-mono text-[var(--text-muted)]">Host Memory: Awaiting telemetry</div>
             )}
             {latestMetric?.diskPercent != null ? (
-              <MetricBar label="Host Disk" value={latestMetric.diskPercent} color="bg-[#F59E0B]" />
+              <MetricBar label="Host Disk" value={latestMetric.diskPercent} color="bg-[#EAE7D6]" />
             ) : (
               <div className="text-xs font-mono text-[var(--text-muted)]">Host Disk: Awaiting telemetry</div>
             )}
@@ -469,20 +469,20 @@ export const DashboardPage: React.FC = () => {
 
           <div className="pt-2 border-t border-[var(--border-subtle)] flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-[var(--text-muted)]">
             <span className="flex items-center gap-1.5">
-              <Wifi className="w-3.5 h-3.5 text-[#38BDF8]" />
+              <Wifi className="w-3.5 h-3.5 text-[#D7F9FA]" />
               Network RX / TX:{' '}
               <strong className="text-[var(--text-main)]">
                 {formatRate(latestMetric?.netRecvRateBps)} / {formatRate(latestMetric?.netSentRateBps)}
               </strong>
             </span>
             <div className="flex items-center gap-3">
-              <Link to="/monitoring/docker" className="hover:text-[#34D399]">
+              <Link to="/monitoring/docker" className="hover:text-[#B0D4B8]">
                 Docker:{' '}
                 {dockerSnapshot?.available
                   ? `${dockerSnapshot.containers.filter((c) => c.status === 'RUNNING').length}/${dockerSnapshot.containers.length} Running`
                   : 'Unavailable'}
               </Link>
-              <Link to="/monitoring/processes" className="hover:text-[#34D399]">
+              <Link to="/monitoring/processes" className="hover:text-[#B0D4B8]">
                 Processes: {collectorStatus?.processDataAvailable ? 'Live Collector' : 'Awaiting'}
               </Link>
             </div>
@@ -492,12 +492,12 @@ export const DashboardPage: React.FC = () => {
         <section aria-labelledby="infra-heading" className="sharp-card p-5 flex flex-col justify-between space-y-4">
           <div className="flex items-center justify-between gap-2">
             <h2 id="infra-heading" className="sharp-section-title flex items-center gap-2">
-              <Server className="w-4 h-4 text-[#34D399]" />
+              <Server className="w-4 h-4 text-[#B0D4B8]" />
               <span>Infrastructure Intelligence</span>
             </h2>
             <Link
               to="/servers"
-              className="text-xs font-mono text-[#34D399] hover:underline inline-flex items-center gap-1"
+              className="text-xs font-mono text-[#B0D4B8] hover:underline inline-flex items-center gap-1"
             >
               <span>All Nodes</span>
               <ArrowRight className="w-3 h-3" />
@@ -505,16 +505,16 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-3 gap-2 text-center font-mono text-[11px]">
-            <div className="p-2 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
-              <div className="text-[#34D399] font-bold text-sm">{onlineServers}</div>
+            <div className="p-2 rounded-lg bg-[#5D7B6F]/10 border border-[#5D7B6F]/30">
+              <div className="text-[#B0D4B8] font-bold text-sm">{onlineServers}</div>
               <div className="text-[var(--text-muted)] text-[10px]">ONLINE</div>
             </div>
-            <div className="p-2 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
-              <div className="text-[#F59E0B] font-bold text-sm">{degradedServers}</div>
+            <div className="p-2 rounded-lg bg-[#EAE7D6]/10 border border-[#EAE7D6]/30">
+              <div className="text-[#EAE7D6] font-bold text-sm">{degradedServers}</div>
               <div className="text-[var(--text-muted)] text-[10px]">DEGRADED</div>
             </div>
-            <div className="p-2 rounded-lg bg-[#F43F5E]/10 border border-[#F43F5E]/30">
-              <div className="text-[#F43F5E] font-bold text-sm">{offlineServers}</div>
+            <div className="p-2 rounded-lg bg-[#EAE7D6]/10 border border-[#EAE7D6]/30">
+              <div className="text-[#EAE7D6] font-bold text-sm">{offlineServers}</div>
               <div className="text-[var(--text-muted)] text-[10px]">OFFLINE</div>
             </div>
           </div>
@@ -543,13 +543,13 @@ export const DashboardPage: React.FC = () => {
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#192230',
-                      borderColor: '#334155',
+                      backgroundColor: '#1D2B26',
+                      borderColor: '#3D544B',
                       fontSize: 12,
-                      color: '#F1F5F9',
+                      color: '#EAE7D6',
                     }}
                   />
-                  <Legend wrapperStyle={{ fontSize: 11, color: '#8B9BB4' }} />
+                  <Legend wrapperStyle={{ fontSize: 11, color: '#98AB9C' }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -576,12 +576,12 @@ export const DashboardPage: React.FC = () => {
         <section aria-labelledby="incident-intel-heading" className="sharp-card p-5 space-y-4">
           <div className="flex items-center justify-between gap-2">
             <h2 id="incident-intel-heading" className="sharp-section-title flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-[#F43F5E]" />
+              <ShieldAlert className="w-4 h-4 text-[#EAE7D6]" />
               <span>Incident Intelligence</span>
             </h2>
             <Link
               to="/incidents"
-              className="text-xs font-mono text-[#34D399] hover:underline inline-flex items-center gap-1"
+              className="text-xs font-mono text-[#B0D4B8] hover:underline inline-flex items-center gap-1"
             >
               <span>Manage Incidents</span>
               <ArrowRight className="w-3 h-3" />
@@ -589,20 +589,20 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-4 gap-2 text-center font-mono text-[11px]">
-            <div className="p-2 rounded-lg bg-[#F43F5E]/10 border border-[#F43F5E]/30">
-              <div className="text-[#F43F5E] font-bold text-sm">{criticalIncidents}</div>
+            <div className="p-2 rounded-lg bg-[#EAE7D6]/10 border border-[#EAE7D6]/30">
+              <div className="text-[#EAE7D6] font-bold text-sm">{criticalIncidents}</div>
               <div className="text-[var(--text-muted)] text-[10px]">CRITICAL</div>
             </div>
-            <div className="p-2 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
-              <div className="text-[#F59E0B] font-bold text-sm">{highIncidents}</div>
+            <div className="p-2 rounded-lg bg-[#EAE7D6]/10 border border-[#EAE7D6]/30">
+              <div className="text-[#EAE7D6] font-bold text-sm">{highIncidents}</div>
               <div className="text-[var(--text-muted)] text-[10px]">HIGH</div>
             </div>
-            <div className="p-2 rounded-lg bg-[#38BDF8]/10 border border-[#38BDF8]/30">
-              <div className="text-[#38BDF8] font-bold text-sm">{mediumIncidents}</div>
+            <div className="p-2 rounded-lg bg-[#D7F9FA]/10 border border-[#D7F9FA]/30">
+              <div className="text-[#D7F9FA] font-bold text-sm">{mediumIncidents}</div>
               <div className="text-[var(--text-muted)] text-[10px]">MEDIUM</div>
             </div>
-            <div className="p-2 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
-              <div className="text-[#34D399] font-bold text-sm">{lowIncidents}</div>
+            <div className="p-2 rounded-lg bg-[#5D7B6F]/10 border border-[#5D7B6F]/30">
+              <div className="text-[#B0D4B8] font-bold text-sm">{lowIncidents}</div>
               <div className="text-[var(--text-muted)] text-[10px]">LOW</div>
             </div>
           </div>
@@ -621,10 +621,10 @@ export const DashboardPage: React.FC = () => {
                     <span
                       className={
                         incident.severity === 'CRITICAL'
-                          ? 'text-[#F43F5E]'
+                          ? 'text-[#EAE7D6]'
                           : incident.severity === 'HIGH'
-                          ? 'text-[#F59E0B]'
-                          : 'text-[#38BDF8]'
+                          ? 'text-[#EAE7D6]'
+                          : 'text-[#D7F9FA]'
                       }
                     >
                       {incident.severity}
@@ -659,16 +659,16 @@ export const DashboardPage: React.FC = () => {
         <section aria-labelledby="recovery-ops-heading" className="sharp-card p-5 space-y-4">
           <div className="flex items-center justify-between gap-2">
             <h2 id="recovery-ops-heading" className="sharp-section-title flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-[#34D399]" />
+              <ShieldCheck className="w-4 h-4 text-[#B0D4B8]" />
               <span>Recovery Operations</span>
             </h2>
             <div className="flex items-center gap-3 text-xs font-mono">
-              <Link to="/recovery" className="text-[#38BDF8] hover:underline">
+              <Link to="/recovery" className="text-[#D7F9FA] hover:underline">
                 Manage
               </Link>
               <Link
                 to="/recovery/history"
-                className="text-[#34D399] hover:underline inline-flex items-center gap-1"
+                className="text-[#B0D4B8] hover:underline inline-flex items-center gap-1"
               >
                 <span>History</span>
                 <ArrowRight className="w-3 h-3" />
@@ -677,16 +677,16 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-3 gap-2 text-center font-mono text-[11px]">
-            <div className="p-2 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
-              <div className="text-[#34D399] font-bold text-sm">{verifiedRecoveries}</div>
+            <div className="p-2 rounded-lg bg-[#5D7B6F]/10 border border-[#5D7B6F]/30">
+              <div className="text-[#B0D4B8] font-bold text-sm">{verifiedRecoveries}</div>
               <div className="text-[var(--text-muted)] text-[10px]">VERIFIED</div>
             </div>
-            <div className="p-2 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
-              <div className="text-[#F59E0B] font-bold text-sm">{pendingRecoveries}</div>
+            <div className="p-2 rounded-lg bg-[#EAE7D6]/10 border border-[#EAE7D6]/30">
+              <div className="text-[#EAE7D6] font-bold text-sm">{pendingRecoveries}</div>
               <div className="text-[var(--text-muted)] text-[10px]">IN FLIGHT</div>
             </div>
-            <div className="p-2 rounded-lg bg-[#F43F5E]/10 border border-[#F43F5E]/30">
-              <div className="text-[#F43F5E] font-bold text-sm">{failedRecoveries}</div>
+            <div className="p-2 rounded-lg bg-[#EAE7D6]/10 border border-[#EAE7D6]/30">
+              <div className="text-[#EAE7D6] font-bold text-sm">{failedRecoveries}</div>
               <div className="text-[var(--text-muted)] text-[10px]">FAILED</div>
             </div>
           </div>

@@ -60,11 +60,11 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, className = ''
     'bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]';
 
   if (SUCCESS_STATUSES.has(normalized)) {
-    colorClasses = 'bg-[#10B981]/10 text-[#34D399] border-[#10B981]/30';
+    colorClasses = 'bg-[#B0D4B8]/15 text-[#B0D4B8] border-[#B0D4B8]/35';
   } else if (WARNING_STATUSES.has(normalized)) {
-    colorClasses = 'bg-[#F59E0B]/10 text-[#F59E0B] border-[#F59E0B]/30';
+    colorClasses = 'bg-[#EAE7D6]/12 text-[#EAE7D6] border-dashed border-[#EAE7D6]/45';
   } else if (CRITICAL_STATUSES.has(normalized)) {
-    colorClasses = 'bg-[#F43F5E]/10 text-[#F43F5E] border-[#F43F5E]/30';
+    colorClasses = 'bg-[#EAE7D6]/20 text-[#EAE7D6] border-[#EAE7D6]/75 ring-1 ring-[#EAE7D6]/30';
   }
 
   const isTransient = TRANSIENT_PULSE.has(normalized);

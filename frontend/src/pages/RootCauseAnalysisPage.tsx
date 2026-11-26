@@ -133,22 +133,22 @@ export const RootCauseAnalysisPage: React.FC = () => {
       {error && <ErrorBanner message={error} onRetry={fetchIncidents} />}
 
       {feedback && (
-        <div className="p-3.5 rounded-xl bg-[#34D399]/10 border border-[#34D399]/35 text-[#34D399] text-xs font-mono">
+        <div className="p-3.5 rounded-xl bg-[#B0D4B8]/10 border border-[#B0D4B8]/35 text-[#B0D4B8] text-xs font-mono">
           {feedback}
         </div>
       )}
 
       {/* Incident Selector + Analyze Button */}
       <div className="bg-dark-900 border border-dark-700/80 rounded-xl p-4 shadow-lg flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
-          <Stethoscope className="w-4 h-4 text-[#A78BFA]" />
+        <div className="flex items-center gap-2 text-xs font-mono text-[var(--text-muted)]">
+          <Stethoscope className="w-4 h-4 text-[#A4C3A2]" />
           <span>Target Incident:</span>
         </div>
         <select
           value={selected?.id ?? ''}
           onChange={(e) => setSelectedId(Number(e.target.value))}
           disabled={loading || incidents.length === 0}
-          className="flex-1 min-w-[240px] max-w-2xl px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-xs text-slate-200 font-mono focus:outline-none focus:border-[#7C3AED]"
+          className="flex-1 min-w-[240px] max-w-2xl px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-xs text-[var(--text-main)] font-mono focus:outline-none focus:border-[#5D7B6F]"
         >
           {incidents.length === 0 ? (
             <option value="">No incidents available</option>
@@ -164,7 +164,7 @@ export const RootCauseAnalysisPage: React.FC = () => {
         <button
           disabled={!selected || analyzing}
           onClick={handleAnalyze}
-          className="px-4 py-2 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-semibold flex items-center gap-2 disabled:opacity-50 transition"
+          className="px-4 py-2 rounded-lg bg-[#5D7B6F] hover:bg-[#4D685D] text-white text-xs font-semibold flex items-center gap-2 disabled:opacity-50 transition"
         >
           <Play className="w-3.5 h-3.5" />
           {analyzing ? 'Analyzing...' : latestRca ? 'Reanalyze Incident' : 'Analyze Incident'}
@@ -186,34 +186,34 @@ export const RootCauseAnalysisPage: React.FC = () => {
             <div className="bg-dark-900 border border-dark-700/80 rounded-xl p-5 shadow-lg space-y-3">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <span className="text-[11px] font-mono text-slate-500 uppercase">
+                  <span className="text-[11px] font-mono text-[var(--text-muted)] uppercase">
                     Incident #{selected.id} · Source: {selected.source || 'MANUAL'}
                   </span>
-                  <h2 className="text-lg font-bold text-slate-100 mt-0.5">{selected.title}</h2>
-                  <p className="text-xs text-slate-400 mt-1">{selected.description}</p>
+                  <h2 className="text-lg font-bold text-[var(--text-main)] mt-0.5">{selected.title}</h2>
+                  <p className="text-xs text-[var(--text-muted)] mt-1">{selected.description}</p>
                 </div>
                 <StatusBadge status={selected.status} />
               </div>
-              <div className="flex flex-wrap gap-4 pt-2 border-t border-dark-800 text-[11px] font-mono text-slate-400">
-                <span>Resource: <strong className="text-slate-200">{selected.affectedResource || selected.applicationName || 'Host'}</strong></span>
-                <span>Severity: <strong className="text-rose-400">{selected.severity}</strong></span>
-                <span>RCA Status: <strong className="text-[#A78BFA]">{selected.rcaStatus || 'PENDING'}</strong></span>
+              <div className="flex flex-wrap gap-4 pt-2 border-t border-dark-800 text-[11px] font-mono text-[var(--text-muted)]">
+                <span>Resource: <strong className="text-[var(--text-main)]">{selected.affectedResource || selected.applicationName || 'Host'}</strong></span>
+                <span>Severity: <strong className="text-[#EAE7D6]">{selected.severity}</strong></span>
+                <span>RCA Status: <strong className="text-[#A4C3A2]">{selected.rcaStatus || 'PENDING'}</strong></span>
               </div>
             </div>
 
             {/* Latest RCA Result */}
             <div className="bg-dark-900 border border-dark-700/80 rounded-xl p-5 shadow-lg space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-                  <Bot className="w-4 h-4 text-[#A78BFA]" />
+                <h3 className="text-sm font-semibold text-[var(--text-main)] flex items-center gap-2">
+                  <Bot className="w-4 h-4 text-[#A4C3A2]" />
                   Root Cause Assessment
                 </h3>
                 {latestRca && (
                   <span
                     className={`text-[11px] font-mono px-2 py-0.5 rounded border ${
                       latestRca.analysisMethod === 'AI_ANALYSIS'
-                        ? 'bg-[#7C3AED]/15 text-[#A78BFA] border-[#7C3AED]/35'
-                        : 'bg-[#F59E0B]/10 text-[#F59E0B] border-[#F59E0B]/30'
+                        ? 'bg-[#5D7B6F]/15 text-[#A4C3A2] border-[#5D7B6F]/35'
+                        : 'bg-[#EAE7D6]/10 text-[#EAE7D6] border-[#EAE7D6]/30'
                     }`}
                   >
                     {latestRca.analysisMethod}
@@ -223,18 +223,18 @@ export const RootCauseAnalysisPage: React.FC = () => {
 
               {latestRca ? (
                 <div className="space-y-4 text-xs">
-                  <div className="p-4 rounded-lg bg-dark-850 border border-dark-700 text-slate-200 leading-relaxed">
+                  <div className="p-4 rounded-lg bg-dark-850 border border-dark-700 text-[var(--text-main)] leading-relaxed">
                     {latestRca.hypothesis}
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono text-[11px]">
                     <div className="p-3 rounded-lg bg-dark-850 border border-dark-700">
-                      <span className="text-slate-500 block">Contributing Factors</span>
-                      <span className="text-slate-300">{latestRca.contributingFactors || 'N/A'}</span>
+                      <span className="text-[var(--text-muted)] block">Contributing Factors</span>
+                      <span className="text-[var(--text-secondary)]">{latestRca.contributingFactors || 'N/A'}</span>
                     </div>
                     <div className="p-3 rounded-lg bg-dark-850 border border-dark-700">
-                      <span className="text-slate-500 block">Confidence</span>
-                      <span className="text-[#22D3EE]">
+                      <span className="text-[var(--text-muted)] block">Confidence</span>
+                      <span className="text-[#D7F9FA]">
                         {latestRca.confidenceScore != null
                           ? `${(latestRca.confidenceScore * 100).toFixed(0)}% (AI)`
                           : 'N/A (Deterministic Fallback)'}
@@ -244,17 +244,17 @@ export const RootCauseAnalysisPage: React.FC = () => {
 
                   {latestRca.supportingEvidence && (
                     <div>
-                      <span className="text-[11px] font-mono text-slate-500 uppercase block mb-1">
+                      <span className="text-[11px] font-mono text-[var(--text-muted)] uppercase block mb-1">
                         Supporting Evidence
                       </span>
-                      <pre className="p-3 rounded-lg bg-dark-950 border border-dark-800 text-[11px] font-mono text-slate-300 whitespace-pre-wrap">
+                      <pre className="p-3 rounded-lg bg-dark-950 border border-dark-800 text-[11px] font-mono text-[var(--text-secondary)] whitespace-pre-wrap">
                         {latestRca.supportingEvidence}
                       </pre>
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="p-6 text-center text-xs font-mono text-slate-500 border border-dashed border-dark-700 rounded-lg">
+                <div className="p-6 text-center text-xs font-mono text-[var(--text-muted)] border border-dashed border-dark-700 rounded-lg">
                   No RCA run yet for this incident. Click <strong>Analyze Incident</strong> above to run diagnostics.
                 </div>
               )}
@@ -264,21 +264,21 @@ export const RootCauseAnalysisPage: React.FC = () => {
           {/* Right Column */}
           <div className="space-y-6">
             <div className="bg-dark-900 border border-dark-700/80 rounded-xl p-5 shadow-lg space-y-4">
-              <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-                <Terminal className="w-4 h-4 text-[#22D3EE]" />
+              <h3 className="text-sm font-semibold text-[var(--text-main)] flex items-center gap-2">
+                <Terminal className="w-4 h-4 text-[#D7F9FA]" />
                 Recommended Investigation
               </h3>
-              <p className="text-xs text-slate-300 leading-relaxed">
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
                 {latestRca?.recommendedInvestigation || 'Run RCA to generate investigation steps.'}
               </p>
             </div>
 
             <div className="bg-dark-900 border border-dark-700/80 rounded-xl p-5 shadow-lg space-y-4">
-              <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-[#34D399]" />
+              <h3 className="text-sm font-semibold text-[var(--text-main)] flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-[#B0D4B8]" />
                 Recommended Recovery Action
               </h3>
-              <div className="p-3 rounded-lg bg-dark-850 border border-dark-700 font-mono text-xs text-[#22D3EE]">
+              <div className="p-3 rounded-lg bg-dark-850 border border-dark-700 font-mono text-xs text-[#D7F9FA]">
                 {latestRca?.recommendedActionType || 'RUN_HEALTH_PROBE'}
               </div>
 
@@ -286,32 +286,32 @@ export const RootCauseAnalysisPage: React.FC = () => {
                 type="button"
                 disabled={recommending}
                 onClick={handleCreateRecommendation}
-                className="w-full py-2 px-3 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-medium disabled:opacity-50 transition"
+                className="w-full py-2 px-3 rounded-lg bg-[#5D7B6F] hover:bg-[#4D685D] text-white text-xs font-medium disabled:opacity-50 transition"
               >
                 {recommending ? 'Generating...' : 'Generate Recovery Recommendation'}
               </button>
 
               {recError && (
-                <div className="p-3 rounded-lg bg-[#F43F5E]/10 border border-[#F43F5E]/35 text-[#F43F5E] text-xs font-mono">
+                <div className="p-3 rounded-lg bg-[#EAE7D6]/10 border border-[#EAE7D6]/35 text-[#EAE7D6] text-xs font-mono">
                   {recError}
                 </div>
               )}
 
               {generatedRec && (
-                <div className="p-3 rounded-lg bg-[#34D399]/10 border border-[#34D399]/35 text-xs space-y-1.5">
+                <div className="p-3 rounded-lg bg-[#B0D4B8]/10 border border-[#B0D4B8]/35 text-xs space-y-1.5">
                   <div className="flex items-center justify-between font-mono">
-                    <span className="text-[#34D399] font-semibold">
+                    <span className="text-[#B0D4B8] font-semibold">
                       Recommendation #{generatedRec.id} Created
                     </span>
-                    <span className="px-1.5 py-0.5 rounded bg-dark-900 border border-dark-700 text-[10px] text-slate-200">
+                    <span className="px-1.5 py-0.5 rounded bg-dark-900 border border-dark-700 text-[10px] text-[var(--text-main)]">
                       {generatedRec.riskLevel}
                     </span>
                   </div>
-                  <div className="font-mono text-[11px] text-slate-200">
+                  <div className="font-mono text-[11px] text-[var(--text-main)]">
                     {generatedRec.actionType} · {generatedRec.status}
                   </div>
                   {generatedRec.expectedResult && (
-                    <p className="text-[11px] text-slate-400">{generatedRec.expectedResult}</p>
+                    <p className="text-[11px] text-[var(--text-muted)]">{generatedRec.expectedResult}</p>
                   )}
                 </div>
               )}
@@ -319,7 +319,7 @@ export const RootCauseAnalysisPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => navigate('/recovery')}
-                className="w-full py-2 px-3 rounded-lg bg-dark-850 hover:bg-dark-800 border border-dark-700 text-slate-200 text-xs font-medium flex items-center justify-center gap-2 transition"
+                className="w-full py-2 px-3 rounded-lg bg-dark-850 hover:bg-dark-800 border border-dark-700 text-[var(--text-main)] text-xs font-medium flex items-center justify-center gap-2 transition"
               >
                 Open Recovery Management
                 <ArrowRight className="w-3.5 h-3.5" />

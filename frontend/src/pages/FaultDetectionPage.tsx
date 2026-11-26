@@ -114,46 +114,46 @@ export const FaultDetectionPage: React.FC = () => {
       {error && <ErrorBanner message={error} onRetry={fetchAnomalies} />}
 
       {feedback && (
-        <div className="p-3.5 rounded-xl bg-[#34D399]/10 border border-[#34D399]/35 text-[#34D399] text-xs font-mono">
+        <div className="p-3.5 rounded-xl bg-[#B0D4B8]/10 border border-[#B0D4B8]/35 text-[#B0D4B8] text-xs font-mono">
           {feedback}
         </div>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Detected Anomalies" value={anomalies.length} subtitle="Persisted anomaly events" icon={Radar} color="text-[#A78BFA]" />
+        <StatCard title="Detected Anomalies" value={anomalies.length} subtitle="Persisted anomaly events" icon={Radar} color="text-[#A4C3A2]" />
         <StatCard
           title="Active Anomalies"
           value={activeCount}
           subtitle="Ongoing fault conditions"
           icon={AlertTriangle}
-          color={activeCount > 0 ? 'text-[#F59E0B]' : 'text-[#34D399]'}
+          color={activeCount > 0 ? 'text-[#EAE7D6]' : 'text-[#B0D4B8]'}
         />
         <StatCard
           title="Critical Severity"
           value={criticalCount}
           subtitle="Active critical anomalies"
           icon={ShieldAlert}
-          color={criticalCount > 0 ? 'text-[#F43F5E]' : 'text-[#34D399]'}
+          color={criticalCount > 0 ? 'text-[#EAE7D6]' : 'text-[#B0D4B8]'}
         />
-        <StatCard title="Resolved Anomalies" value={resolvedCount} subtitle="Cleared or verified" icon={CheckCircle2} color="text-[#34D399]" />
+        <StatCard title="Resolved Anomalies" value={resolvedCount} subtitle="Cleared or verified" icon={CheckCircle2} color="text-[#B0D4B8]" />
       </div>
 
       {/* Filters */}
       <div className="bg-dark-900 border border-dark-700/80 rounded-xl p-4 shadow-lg grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
         <div className="relative lg:col-span-2">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)]" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search resource, metric, description..."
-            className="w-full pl-8 pr-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-xs text-slate-200 font-mono focus:outline-none focus:border-[#7C3AED]"
+            className="w-full pl-8 pr-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-xs text-[var(--text-main)] font-mono focus:outline-none focus:border-[#5D7B6F]"
           />
         </div>
         <select
           value={severityFilter}
           onChange={(e) => setSeverityFilter(e.target.value)}
-          className="px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-xs text-slate-200 font-mono focus:outline-none focus:border-[#7C3AED]"
+          className="px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-xs text-[var(--text-main)] font-mono focus:outline-none focus:border-[#5D7B6F]"
         >
           <option value="ALL">All Severities</option>
           <option value="CRITICAL">CRITICAL</option>
@@ -164,7 +164,7 @@ export const FaultDetectionPage: React.FC = () => {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-xs text-slate-200 font-mono focus:outline-none focus:border-[#7C3AED]"
+          className="px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-xs text-[var(--text-main)] font-mono focus:outline-none focus:border-[#5D7B6F]"
         >
           <option value="ALL">All States</option>
           <option value="ACTIVE">ACTIVE</option>
@@ -175,7 +175,7 @@ export const FaultDetectionPage: React.FC = () => {
         <select
           value={methodFilter}
           onChange={(e) => setMethodFilter(e.target.value)}
-          className="px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-xs text-slate-200 font-mono focus:outline-none focus:border-[#7C3AED]"
+          className="px-3 py-2 rounded-lg bg-dark-850 border border-dark-700 text-xs text-[var(--text-main)] font-mono focus:outline-none focus:border-[#5D7B6F]"
         >
           <option value="ALL">All Methods</option>
           <option value="RULE_BASED">RULE_BASED</option>
@@ -188,16 +188,16 @@ export const FaultDetectionPage: React.FC = () => {
         {/* Table */}
         <div className="lg:col-span-2 bg-dark-900 border border-dark-700/80 rounded-xl overflow-hidden shadow-lg">
           <div className="p-4 bg-dark-850 border-b border-dark-700 flex items-center justify-between text-xs font-mono">
-            <span className="text-slate-300 font-semibold uppercase flex items-center gap-2">
-              <Filter className="w-3.5 h-3.5 text-[#7C3AED]" />
+            <span className="text-[var(--text-secondary)] font-semibold uppercase flex items-center gap-2">
+              <Filter className="w-3.5 h-3.5 text-[#5D7B6F]" />
               Detected Anomalies
             </span>
-            <span className="text-slate-500">Showing {filtered.length} of {anomalies.length}</span>
+            <span className="text-[var(--text-muted)]">Showing {filtered.length} of {anomalies.length}</span>
           </div>
 
           {loading ? (
-            <div className="p-12 text-center text-slate-500 text-xs font-mono">
-              <RefreshCw className="w-4 h-4 animate-spin inline mr-2 text-[#7C3AED]" />
+            <div className="p-12 text-center text-[var(--text-muted)] text-xs font-mono">
+              <RefreshCw className="w-4 h-4 animate-spin inline mr-2 text-[#5D7B6F]" />
               Loading anomaly stream...
             </div>
           ) : filtered.length === 0 ? (
@@ -209,7 +209,7 @@ export const FaultDetectionPage: React.FC = () => {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-dark-850/60 border-b border-dark-800 text-slate-400 uppercase font-mono text-[11px]">
+                <thead className="bg-dark-850/60 border-b border-dark-800 text-[var(--text-muted)] uppercase font-mono text-[11px]">
                   <tr>
                     <th className="py-3 px-4">ID</th>
                     <th className="py-3 px-4">Metric / Resource</th>
@@ -225,16 +225,16 @@ export const FaultDetectionPage: React.FC = () => {
                       key={a.id}
                       onClick={() => setSelected(a)}
                       className={`cursor-pointer transition hover:bg-dark-850/70 ${
-                        selected?.id === a.id ? 'bg-dark-850 border-l-2 border-[#7C3AED]' : ''
+                        selected?.id === a.id ? 'bg-dark-850 border-l-2 border-[#5D7B6F]' : ''
                       }`}
                     >
-                      <td className="py-3 px-4 text-slate-400">#{a.id}</td>
+                      <td className="py-3 px-4 text-[var(--text-muted)]">#{a.id}</td>
                       <td className="py-3 px-4">
-                        <div className="text-slate-200 font-semibold">{a.metricName}</div>
-                        <div className="text-[10px] text-slate-500">{a.resourceName}</div>
+                        <div className="text-[var(--text-main)] font-semibold">{a.metricName}</div>
+                        <div className="text-[10px] text-[var(--text-muted)]">{a.resourceName}</div>
                       </td>
-                      <td className="py-3 px-4 text-[#22D3EE]">{a.detectionMethod}</td>
-                      <td className="py-3 px-4 text-slate-200">{a.observedValue}</td>
+                      <td className="py-3 px-4 text-[#D7F9FA]">{a.detectionMethod}</td>
+                      <td className="py-3 px-4 text-[var(--text-main)]">{a.observedValue}</td>
                       <td className="py-3 px-4">
                         <StatusBadge status={a.severity} />
                       </td>
@@ -252,36 +252,36 @@ export const FaultDetectionPage: React.FC = () => {
         {/* Detail Panel */}
         <div className="bg-dark-900 border border-dark-700/80 rounded-xl p-5 shadow-lg space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-dark-800">
-            <h2 className="text-sm font-semibold text-slate-200">Anomaly Details</h2>
+            <h2 className="text-sm font-semibold text-[var(--text-main)]">Anomaly Details</h2>
             {selected && <StatusBadge status={selected.status} />}
           </div>
 
           {selected ? (
             <div className="space-y-4 text-xs">
               <div>
-                <div className="text-[11px] font-mono text-[#A78BFA]">
+                <div className="text-[11px] font-mono text-[#A4C3A2]">
                   #{selected.id} · {selected.detectionMethod}
                 </div>
-                <h3 className="text-base font-bold text-slate-100 mt-0.5">{selected.metricName}</h3>
-                <p className="text-slate-400 mt-1">{selected.description}</p>
+                <h3 className="text-base font-bold text-[var(--text-main)] mt-0.5">{selected.metricName}</h3>
+                <p className="text-[var(--text-muted)] mt-1">{selected.description}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3 p-3 rounded-lg bg-dark-850 border border-dark-700 font-mono text-[11px]">
                 <div>
-                  <span className="text-slate-500 block">Observed</span>
-                  <span className="text-slate-200 font-bold">{selected.observedValue}</span>
+                  <span className="text-[var(--text-muted)] block">Observed</span>
+                  <span className="text-[var(--text-main)] font-bold">{selected.observedValue}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block">Baseline / Limit</span>
-                  <span className="text-slate-200">{selected.baselineValue ?? 'N/A'}</span>
+                  <span className="text-[var(--text-muted)] block">Baseline / Limit</span>
+                  <span className="text-[var(--text-main)]">{selected.baselineValue ?? 'N/A'}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block">Anomaly Score</span>
-                  <span className="text-[#22D3EE]">{selected.anomalyScore ?? 'N/A'}</span>
+                  <span className="text-[var(--text-muted)] block">Anomaly Score</span>
+                  <span className="text-[#D7F9FA]">{selected.anomalyScore ?? 'N/A'}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block">AI Confidence</span>
-                  <span className="text-[#A78BFA]">
+                  <span className="text-[var(--text-muted)] block">AI Confidence</span>
+                  <span className="text-[#A4C3A2]">
                     {selected.confidenceScore != null ? `${(selected.confidenceScore * 100).toFixed(0)}%` : 'N/A (Non-AI)'}
                   </span>
                 </div>
@@ -289,8 +289,8 @@ export const FaultDetectionPage: React.FC = () => {
 
               {selected.evidence && (
                 <div>
-                  <span className="text-[11px] font-mono text-slate-500 uppercase block mb-1">Evidence</span>
-                  <pre className="p-2.5 rounded-lg bg-dark-950 border border-dark-800 text-[11px] font-mono text-slate-300 whitespace-pre-wrap">
+                  <span className="text-[11px] font-mono text-[var(--text-muted)] uppercase block mb-1">Evidence</span>
+                  <pre className="p-2.5 rounded-lg bg-dark-950 border border-dark-800 text-[11px] font-mono text-[var(--text-secondary)] whitespace-pre-wrap">
                     {selected.evidence}
                   </pre>
                 </div>
@@ -300,21 +300,21 @@ export const FaultDetectionPage: React.FC = () => {
                 <button
                   disabled={actionBusy || selected.status === 'ACKNOWLEDGED'}
                   onClick={() => handleLifecycleAction(selected.id, 'acknowledge')}
-                  className="flex-1 py-1.5 px-2.5 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-medium disabled:opacity-40 flex items-center justify-center gap-1"
+                  className="flex-1 py-1.5 px-2.5 rounded-lg bg-[#5D7B6F] hover:bg-[#4D685D] text-white text-xs font-medium disabled:opacity-40 flex items-center justify-center gap-1"
                 >
                   <Check className="w-3.5 h-3.5" /> Acknowledge
                 </button>
                 <button
                   disabled={actionBusy || selected.status === 'RESOLVED'}
                   onClick={() => handleLifecycleAction(selected.id, 'resolve')}
-                  className="flex-1 py-1.5 px-2.5 rounded-lg bg-[#34D399]/20 hover:bg-[#34D399]/30 text-[#34D399] border border-[#34D399]/40 text-xs font-medium disabled:opacity-40"
+                  className="flex-1 py-1.5 px-2.5 rounded-lg bg-[#B0D4B8]/20 hover:bg-[#B0D4B8]/30 text-[#B0D4B8] border border-[#B0D4B8]/40 text-xs font-medium disabled:opacity-40"
                 >
                   Resolve
                 </button>
                 <button
                   disabled={actionBusy || selected.status === 'SUPPRESSED'}
                   onClick={() => handleLifecycleAction(selected.id, 'suppress')}
-                  className="py-1.5 px-2.5 rounded-lg bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs disabled:opacity-40 flex items-center gap-1"
+                  className="py-1.5 px-2.5 rounded-lg bg-dark-800 hover:bg-dark-700 text-[var(--text-secondary)] text-xs disabled:opacity-40 flex items-center gap-1"
                 >
                   <EyeOff className="w-3.5 h-3.5" /> Suppress
                 </button>
@@ -323,7 +323,7 @@ export const FaultDetectionPage: React.FC = () => {
               {selected.incidentId && (
                 <button
                   onClick={() => navigate(`/diagnosis?incidentId=${selected.incidentId}`)}
-                  className="w-full py-2 px-3 rounded-lg bg-dark-850 hover:bg-dark-800 border border-[#7C3AED]/40 text-[#A78BFA] font-medium flex items-center justify-center gap-2 transition"
+                  className="w-full py-2 px-3 rounded-lg bg-dark-850 hover:bg-dark-800 border border-[#5D7B6F]/40 text-[#A4C3A2] font-medium flex items-center justify-center gap-2 transition"
                 >
                   <Stethoscope className="w-4 h-4" />
                   Inspect Linked Incident #{selected.incidentId}

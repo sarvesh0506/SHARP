@@ -44,8 +44,8 @@ const formatUptime = (sec: number | null | undefined): string => {
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-[#1B2540] border border-[#26324A] rounded-lg p-3 text-xs font-mono shadow-xl text-[#E2E8F0]">
-        <p className="text-[#94A3B8] mb-1">{label}</p>
+      <div className="bg-[#1D2B26] border border-[#24352F] rounded-lg p-3 text-xs font-mono shadow-xl text-[#EAE7D6]">
+        <p className="text-[#98AB9C] mb-1">{label}</p>
         {payload.map((p: any) => (
           <p key={p.name} style={{ color: p.color }}>
             {p.name}: {p.value != null ? `${Number(p.value).toFixed(1)}%` : 'N/A'}
@@ -140,7 +140,7 @@ export const SystemMonitoringPage: React.FC = () => {
                   key={r}
                   onClick={() => setTimeRange(r)}
                   className={`px-2.5 py-1 rounded-md transition ${
-                    timeRange === r ? 'bg-[#7C3AED]/20 text-[#A78BFA]' : 'text-slate-400 hover:text-slate-200'
+                    timeRange === r ? 'bg-[#5D7B6F]/20 text-[#A4C3A2]' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                   }`}
                 >
                   {r}
@@ -150,7 +150,7 @@ export const SystemMonitoringPage: React.FC = () => {
             <button
               onClick={handleCollectNow}
               disabled={triggering}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-medium transition disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#5D7B6F] hover:bg-[#4D685D] text-white text-xs font-medium transition disabled:opacity-50"
             >
               <Play className="w-3.5 h-3.5" />
               {triggering ? 'Collecting...' : 'Collect Now'}
@@ -168,7 +168,7 @@ export const SystemMonitoringPage: React.FC = () => {
           value={latest?.cpuPercent != null ? `${latest.cpuPercent.toFixed(1)}%` : 'N/A'}
           subtitle={latest?.hostName || 'Awaiting telemetry'}
           icon={Cpu}
-          color="text-[#22D3EE]"
+          color="text-[#D7F9FA]"
         />
         <StatCard
           title="Host Memory"
@@ -177,7 +177,7 @@ export const SystemMonitoringPage: React.FC = () => {
             latest ? `${formatBytes(latest.memoryUsedBytes)} / ${formatBytes(latest.memoryTotalBytes)}` : 'Awaiting telemetry'
           }
           icon={Monitor}
-          color="text-[#7C3AED]"
+          color="text-[#5D7B6F]"
         />
         <StatCard
           title="Disk Utilization"
@@ -186,20 +186,20 @@ export const SystemMonitoringPage: React.FC = () => {
             latest ? `${formatBytes(latest.diskUsedBytes)} / ${formatBytes(latest.diskTotalBytes)}` : 'Awaiting telemetry'
           }
           icon={HardDrive}
-          color="text-[#34D399]"
+          color="text-[#B0D4B8]"
         />
         <StatCard
           title="System Uptime"
           value={formatUptime(latest?.uptimeSeconds)}
           subtitle={latest?.osName || 'Host OS'}
           icon={Clock}
-          color="text-[#A78BFA]"
+          color="text-[#A4C3A2]"
         />
       </div>
 
       {loading && !latest ? (
-        <div className="bg-dark-900 border border-dark-700/80 rounded-xl p-12 text-center text-slate-500 font-mono text-xs">
-          <RefreshCw className="w-5 h-5 animate-spin inline mr-2 text-[#22D3EE]" />
+        <div className="bg-dark-900 border border-dark-700/80 rounded-xl p-12 text-center text-[var(--text-muted)] font-mono text-xs">
+          <RefreshCw className="w-5 h-5 animate-spin inline mr-2 text-[#D7F9FA]" />
           Loading real host telemetry...
         </div>
       ) : (
@@ -207,12 +207,12 @@ export const SystemMonitoringPage: React.FC = () => {
           {/* Host & Collector Details */}
           <div className="bg-dark-900 border border-dark-700/80 rounded-xl p-5 shadow-lg space-y-5">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-                <Server className="w-4 h-4 text-[#22D3EE]" />
+              <h2 className="text-sm font-semibold text-[var(--text-main)] flex items-center gap-2">
+                <Server className="w-4 h-4 text-[#D7F9FA]" />
                 Host & Collector Info
               </h2>
               {collectorStatus && (
-                <span className="text-[11px] font-mono text-slate-400">
+                <span className="text-[11px] font-mono text-[var(--text-muted)]">
                   Every {collectorStatus.intervalSeconds}s
                 </span>
               )}
@@ -222,61 +222,61 @@ export const SystemMonitoringPage: React.FC = () => {
               <>
                 <div className="space-y-3">
                   {latest.cpuPercent != null ? (
-                    <MetricBar label="CPU Utilization" value={latest.cpuPercent} color="bg-[#22D3EE]" />
+                    <MetricBar label="CPU Utilization" value={latest.cpuPercent} color="bg-[#D7F9FA]" />
                   ) : (
-                    <div className="text-xs font-mono text-amber-400">CPU Utilization: Calculating delta...</div>
+                    <div className="text-xs font-mono text-[#EAE7D6]">CPU Utilization: Calculating delta...</div>
                   )}
                   {latest.memoryPercent != null && (
-                    <MetricBar label="Memory Utilization" value={latest.memoryPercent} color="bg-[#7C3AED]" />
+                    <MetricBar label="Memory Utilization" value={latest.memoryPercent} color="bg-[#5D7B6F]" />
                   )}
                   {latest.diskPercent != null && (
-                    <MetricBar label="Disk Utilization" value={latest.diskPercent} color="bg-[#34D399]" />
+                    <MetricBar label="Disk Utilization" value={latest.diskPercent} color="bg-[#B0D4B8]" />
                   )}
                 </div>
 
                 <div className="pt-3 border-t border-dark-800 space-y-2 text-xs font-mono">
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Hostname:</span>
-                    <span className="text-slate-200">{latest.hostName}</span>
+                    <span className="text-[var(--text-muted)]">Hostname:</span>
+                    <span className="text-[var(--text-main)]">{latest.hostName}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">RAM Available:</span>
-                    <span className="text-slate-200">{formatBytes(latest.memoryAvailableBytes)}</span>
+                    <span className="text-[var(--text-muted)]">RAM Available:</span>
+                    <span className="text-[var(--text-main)]">{formatBytes(latest.memoryAvailableBytes)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Disk Free:</span>
-                    <span className="text-slate-200">{formatBytes(latest.diskFreeBytes)}</span>
+                    <span className="text-[var(--text-muted)]">Disk Free:</span>
+                    <span className="text-[var(--text-main)]">{formatBytes(latest.diskFreeBytes)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Last Sample:</span>
-                    <span className="text-slate-300">
+                    <span className="text-[var(--text-muted)]">Last Sample:</span>
+                    <span className="text-[var(--text-secondary)]">
                       {new Date(latest.collectedAt).toLocaleTimeString()}
                     </span>
                   </div>
                 </div>
               </>
             ) : (
-              <div className="p-6 text-center text-xs font-mono text-slate-500 border border-dashed border-dark-700 rounded-lg">
+              <div className="p-6 text-center text-xs font-mono text-[var(--text-muted)] border border-dashed border-dark-700 rounded-lg">
                 Awaiting first telemetry sample. Click "Collect Now" to sample immediately.
               </div>
             )}
 
             {/* Network Card */}
             <div className="pt-3 border-t border-dark-800 space-y-2">
-              <div className="text-xs font-semibold text-slate-200 flex items-center gap-2">
-                <Wifi className="w-3.5 h-3.5 text-[#22D3EE]" />
+              <div className="text-xs font-semibold text-[var(--text-main)] flex items-center gap-2">
+                <Wifi className="w-3.5 h-3.5 text-[#D7F9FA]" />
                 Network Throughput
               </div>
               <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
                 <div className="p-2.5 rounded-lg bg-dark-850 border border-dark-700">
-                  <div className="text-slate-500">RX Rate</div>
-                  <div className="text-[#22D3EE] font-bold mt-0.5">{formatRate(latest?.netRecvRateBps)}</div>
-                  <div className="text-slate-500 mt-0.5">Total: {formatBytes(latest?.netBytesRecv)}</div>
+                  <div className="text-[var(--text-muted)]">RX Rate</div>
+                  <div className="text-[#D7F9FA] font-bold mt-0.5">{formatRate(latest?.netRecvRateBps)}</div>
+                  <div className="text-[var(--text-muted)] mt-0.5">Total: {formatBytes(latest?.netBytesRecv)}</div>
                 </div>
                 <div className="p-2.5 rounded-lg bg-dark-850 border border-dark-700">
-                  <div className="text-slate-500">TX Rate</div>
-                  <div className="text-[#A78BFA] font-bold mt-0.5">{formatRate(latest?.netSentRateBps)}</div>
-                  <div className="text-slate-500 mt-0.5">Total: {formatBytes(latest?.netBytesSent)}</div>
+                  <div className="text-[var(--text-muted)]">TX Rate</div>
+                  <div className="text-[#A4C3A2] font-bold mt-0.5">{formatRate(latest?.netSentRateBps)}</div>
+                  <div className="text-[var(--text-muted)] mt-0.5">Total: {formatBytes(latest?.netBytesSent)}</div>
                 </div>
               </div>
             </div>
@@ -286,22 +286,22 @@ export const SystemMonitoringPage: React.FC = () => {
           <div className="lg:col-span-2 bg-dark-900 border border-dark-700/80 rounded-xl p-5 shadow-lg">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-sm font-semibold text-slate-200">
+                <h2 className="text-sm font-semibold text-[var(--text-main)]">
                   Historical Resource Utilization ({timeRange})
                 </h2>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-[var(--text-muted)]">
                   {chartData.length} real host samples persisted in database
                 </p>
               </div>
               {collectorStatus?.lastSuccessAt && (
-                <span className="text-[11px] font-mono text-[#34D399]">
+                <span className="text-[11px] font-mono text-[#B0D4B8]">
                   Last OK: {new Date(collectorStatus.lastSuccessAt).toLocaleTimeString()}
                 </span>
               )}
             </div>
 
             {chartData.length === 0 ? (
-              <div className="h-72 flex items-center justify-center text-xs font-mono text-slate-500 border border-dashed border-dark-800 rounded-lg">
+              <div className="h-72 flex items-center justify-center text-xs font-mono text-[var(--text-muted)] border border-dashed border-dark-800 rounded-lg">
                 No historical samples in this time range yet. Samples are recorded every {collectorStatus?.intervalSeconds ?? 10}s.
               </div>
             ) : (
@@ -309,26 +309,26 @@ export const SystemMonitoringPage: React.FC = () => {
                 <AreaChart data={chartData} margin={{ top: 8, right: 12, bottom: 0, left: -16 }}>
                   <defs>
                     <linearGradient id="cpuGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#22D3EE" stopOpacity={0.35} />
-                      <stop offset="95%" stopColor="#22D3EE" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#D7F9FA" stopOpacity={0.35} />
+                      <stop offset="95%" stopColor="#D7F9FA" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="memGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#7C3AED" stopOpacity={0.35} />
-                      <stop offset="95%" stopColor="#7C3AED" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#5D7B6F" stopOpacity={0.35} />
+                      <stop offset="95%" stopColor="#5D7B6F" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="diskGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#34D399" stopOpacity={0.25} />
-                      <stop offset="95%" stopColor="#34D399" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#B0D4B8" stopOpacity={0.25} />
+                      <stop offset="95%" stopColor="#B0D4B8" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#26324A" />
-                  <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#94A3B8', fontFamily: 'monospace' }} />
-                  <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: '#94A3B8' }} tickFormatter={(v) => `${v}%`} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#24352F" />
+                  <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#98AB9C', fontFamily: 'monospace' }} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: '#98AB9C' }} tickFormatter={(v) => `${v}%`} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Legend wrapperStyle={{ fontSize: 11, color: '#94A3B8' }} />
-                  <Area type="monotone" dataKey="cpu" stroke="#22D3EE" fill="url(#cpuGrad)" strokeWidth={1.75} dot={false} name="CPU" connectNulls />
-                  <Area type="monotone" dataKey="memory" stroke="#7C3AED" fill="url(#memGrad)" strokeWidth={1.75} dot={false} name="Memory" connectNulls />
-                  <Area type="monotone" dataKey="disk" stroke="#34D399" fill="url(#diskGrad)" strokeWidth={1.5} dot={false} name="Disk" connectNulls />
+                  <Legend wrapperStyle={{ fontSize: 11, color: '#98AB9C' }} />
+                  <Area type="monotone" dataKey="cpu" stroke="#D7F9FA" fill="url(#cpuGrad)" strokeWidth={1.75} dot={false} name="CPU" connectNulls />
+                  <Area type="monotone" dataKey="memory" stroke="#5D7B6F" fill="url(#memGrad)" strokeWidth={1.75} dot={false} name="Memory" connectNulls />
+                  <Area type="monotone" dataKey="disk" stroke="#B0D4B8" fill="url(#diskGrad)" strokeWidth={1.5} dot={false} name="Disk" connectNulls />
                 </AreaChart>
               </ResponsiveContainer>
             )}
