@@ -10,11 +10,11 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, className = ''
 
   let colorClasses = 'bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]';
 
-  if (['HEALTHY', 'ONLINE', 'RESOLVED', 'SUCCESS', 'VERIFIED_SUCCESS', 'ACTIVE'].includes(normalized)) {
+  if (['HEALTHY', 'ONLINE', 'RESOLVED', 'CLOSED', 'SUCCESS', 'VERIFIED', 'VERIFIED_SUCCESS', 'ACTIVE'].includes(normalized)) {
     colorClasses = 'bg-[#34D399]/10 text-[#34D399] border-[#34D399]/30';
-  } else if (['DEGRADED', 'RECOVERING', 'DIAGNOSING', 'EXECUTING', 'VERIFYING', 'AWAITING_APPROVAL', 'PENDING'].includes(normalized)) {
+  } else if (['DEGRADED', 'RECOVERING', 'DIAGNOSING', 'EXECUTING', 'VERIFYING', 'AWAITING_APPROVAL', 'RECOVERY_PENDING', 'PENDING_APPROVAL', 'PENDING', 'PARTIALLY_RECOVERED', 'REOPENED'].includes(normalized)) {
     colorClasses = 'bg-[#F59E0B]/10 text-[#F59E0B] border-[#F59E0B]/30';
-  } else if (['UNHEALTHY', 'OFFLINE', 'OPEN', 'FAILED', 'VERIFIED_FAILURE', 'CRITICAL', 'REJECTED'].includes(normalized)) {
+  } else if (['UNHEALTHY', 'OFFLINE', 'OPEN', 'FAILED', 'VERIFIED_FAILURE', 'VERIFICATION_TIMEOUT', 'CRITICAL', 'REJECTED'].includes(normalized)) {
     colorClasses = 'bg-[#F43F5E]/10 text-[#F43F5E] border-[#F43F5E]/30';
   }
 

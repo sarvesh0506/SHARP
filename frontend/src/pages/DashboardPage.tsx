@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../api/client';
+import { useLiveEvents } from '../contexts/LiveEventsContext';
 import {
   CollectorStatus,
   DashboardSummary,
@@ -97,6 +98,13 @@ export const DashboardPage: React.FC = () => {
     return () => clearInterval(interval);
   }, [fetchDashboardData]);
 
+  const { subscribe } = useLiveEvents();
+  useEffect(() => {
+    return subscribe(() => {
+      fetchDashboardData();
+    });
+  }, [subscribe, fetchDashboardData]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64 text-slate-400 font-mono text-sm">
@@ -110,10 +118,10 @@ export const DashboardPage: React.FC = () => {
   const healthyApps = summary?.healthyApplications ?? 0;
   const degradedApps = summary?.unhealthyApplications ?? 0;
   const criticalIncidents = (summary?.recentIncidents ?? []).filter(
-    (i) => i.severity === 'CRITICAL' && i.status !== 'RESOLVED'
+    (i) => i.severity === 'CRITICAL' && !['RESOLVED', 'CLOSED'].includes(i.status)
   ).length;
   const activeRecoveries = recoveries.filter((r) =>
-    ['PENDING', 'AWAITING_APPROVAL', 'APPROVED', 'EXECUTING'].includes(r.status)
+    ['PENDING', 'AWAITING_APPROVAL', 'APPROVED', 'EXECUTING', 'VERIFYING'].includes(r.status)
   ).length;
 
   const overallHealthStatus =

@@ -5,6 +5,7 @@ import { Incident, RecoveryAction } from '../types';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { ErrorBanner } from '../components/ui/Banners';
 import { useAuth } from '../contexts/AuthContext';
+import { useLiveEvents } from '../contexts/LiveEventsContext';
 import {
   AlertTriangle,
   RotateCcw,
@@ -63,6 +64,15 @@ export const IncidentsPage: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const { subscribe } = useLiveEvents();
+  useEffect(() => {
+    return subscribe((ev) => {
+      if (ev.type.startsWith('INCIDENT_') || ev.type.startsWith('RECOVERY_')) {
+        fetchData();
+      }
+    });
+  }, [subscribe]);
 
   const filteredIncidents = useMemo(() => {
     return incidents.filter((inc) => {
@@ -207,7 +217,9 @@ export const IncidentsPage: React.FC = () => {
           <option value="INVESTIGATING">INVESTIGATING</option>
           <option value="RECOVERY_PENDING">RECOVERY_PENDING</option>
           <option value="RECOVERING">RECOVERING</option>
+          <option value="VERIFYING">VERIFYING</option>
           <option value="RESOLVED">RESOLVED</option>
+          <option value="CLOSED">CLOSED</option>
           <option value="REOPENED">REOPENED</option>
           <option value="FAILED">FAILED</option>
         </select>

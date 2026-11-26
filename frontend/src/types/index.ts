@@ -220,8 +220,8 @@ export interface DashboardSummary {
   healthyApplications: number;
   unhealthyApplications: number;
   activeIncidents: number;
-  recoverySuccessRate: number;
-  avgRecoveryTimeSeconds: number;
+  recoverySuccessRate: number | null;
+  avgRecoveryTimeSeconds: number | null;
   avgCpuUsage: number;
   avgMemoryUsage: number;
   recentApplications: Application[];
@@ -359,5 +359,5 @@ export interface AnalyticsSummary {
 }
 
 export type SeverityLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-export type IncidentStatus = 'OPEN' | 'DIAGNOSING' | 'RECOVERING' | 'RESOLVED' | 'FAILED';
-export type RecoveryStatus = 'PENDING' | 'AWAITING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'EXECUTING' | 'SUCCESS' | 'FAILED';
+export type IncidentStatus = 'OPEN' | 'ACKNOWLEDGED' | 'INVESTIGATING' | 'RECOVERY_PENDING' | 'RECOVERING' | 'VERIFYING' | 'RESOLVED' | 'FAILED' | 'REOPENED' | 'CLOSED';
+export type RecoveryStatus = 'PENDING' | 'AWAITING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'EXECUTING' | 'VERIFYING' | 'VERIFIED' | 'PARTIALLY_RECOVERED' | 'VERIFICATION_TIMEOUT' | 'FAILED';

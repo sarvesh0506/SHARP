@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/client';
 import { AnomalyEvent } from '../types';
+import { useLiveEvents } from '../contexts/LiveEventsContext';
 import { PageHeader } from '../components/ui/PageHeader';
 import { StatCard } from '../components/ui/StatCard';
 import { StatusBadge } from '../components/ui/StatusBadge';
@@ -58,6 +59,15 @@ export const FaultDetectionPage: React.FC = () => {
     const id = setInterval(fetchAnomalies, 15000);
     return () => clearInterval(id);
   }, []);
+
+  const { subscribe } = useLiveEvents();
+  useEffect(() => {
+    return subscribe((ev) => {
+      if (ev.type.startsWith('ANOMALY_')) {
+        fetchAnomalies();
+      }
+    });
+  }, [subscribe]);
 
   const handleLifecycleAction = async (id: number, action: 'acknowledge' | 'resolve' | 'suppress') => {
     try {
