@@ -1,62 +1,75 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  AlertTriangle,
+  ArrowRight,
+  CheckCircle2,
+  Clock,
+  Cpu,
+  Layers,
+  Radar,
+  RefreshCw,
+  Server,
+  ShieldAlert,
+  ShieldCheck,
+  Wifi,
+} from 'lucide-react';
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import apiClient from '../api/client';
 import { useLiveEvents } from '../contexts/LiveEventsContext';
 import {
+  AnomalyEvent,
   CollectorStatus,
   DashboardSummary,
   DockerSnapshotResponse,
+  MonitoredServer,
   RecoveryAction,
+  RecoveryRecommendation,
   SystemMetric,
 } from '../types';
 import { StatCard } from '../components/ui/StatCard';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { MetricBar } from '../components/ui/MetricBar';
-import {
-  Layers,
-  AlertTriangle,
-  RotateCcw,
-  Zap,
-  RefreshCw,
-  ShieldAlert,
-  ShieldCheck,
-  Wifi,
-  ArrowRight,
-  Cpu,
-} from 'lucide-react';
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  BarChart,
-  Bar,
-  Cell,
-  Legend,
-} from 'recharts';
+import { ErrorBanner } from '../components/ui/Banners';
+import { SystemHealthBanner } from '../components/dashboard/SystemHealthBanner';
+import { AiIntelligencePanel } from '../components/dashboard/AiIntelligencePanel';
+import { LiveActivityFeed } from '../components/dashboard/LiveActivityFeed';
+import { QuickActionsBar } from '../components/dashboard/QuickActionsBar';
 
-const formatRate = (bps: number | null | undefined): string => {
-  if (bps == null) return 'Calculating...';
-  if (bps >= 1024 * 1024) return `${(bps / (1024 * 1024)).toFixed(2)} MB/s`;
-  if (bps >= 1024) return `${(bps / 1024).toFixed(1)} KB/s`;
-  return `${bps.toFixed(0)} B/s`;
+const formatRate = (bps?: number | null) => {
+  if (bps == null) return '0 B/s';
+  if (bps < 1024) return `${bps.toFixed(0)} B/s`;
+  if (bps < 1024 * 1024) return `${(bps / 1024).toFixed(1)} KB/s`;
+  return `${(bps / (1024 * 1024)).toFixed(2)} MB/s`;
 };
 
 export const DashboardPage: React.FC = () => {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [servers, setServers] = useState<MonitoredServer[]>([]);
+  const [anomalies, setAnomalies] = useState<AnomalyEvent[]>([]);
   const [recoveries, setRecoveries] = useState<RecoveryAction[]>([]);
+  const [recommendations, setRecommendations] = useState<RecoveryRecommendation[]>([]);
   const [latestMetric, setLatestMetric] = useState<SystemMetric | null>(null);
   const [metricHistory, setMetricHistory] = useState<SystemMetric[]>([]);
   const [collectorStatus, setCollectorStatus] = useState<CollectorStatus | null>(null);
   const [dockerSnapshot, setDockerSnapshot] = useState<DockerSnapshotResponse | null>(null);
-
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [timeWindow, setTimeWindow] = useState<'15m' | '1h' | '6h' | '24h'>('1h');
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -65,9 +78,22 @@ export const DashboardPage: React.FC = () => {
       const hoursMap = { '15m': 0.25, '1h': 1, '6h': 6, '24h': 24 };
       const from = new Date(now.getTime() - hoursMap[timeWindow] * 3600 * 1000).toISOString();
 
-      const [sumRes, recRes, latestRes, histRes, colRes, docRes] = await Promise.all([
+      const [
+        sumRes,
+        srvRes,
+        anomRes,
+        recRes,
+        recPlanRes,
+        latestRes,
+        histRes,
+        colRes,
+        docRes,
+      ] = await Promise.all([
         apiClient.get('/dashboard/summary'),
+        apiClient.get('/servers'),
+        apiClient.get('/anomalies'),
         apiClient.get('/recovery'),
+        apiClient.get('/recovery/recommendations'),
         apiClient.get('/monitoring/system/latest'),
         apiClient.get('/monitoring/system/history', {
           params: { from, to: now.toISOString(), limit: 120 },
@@ -77,14 +103,17 @@ export const DashboardPage: React.FC = () => {
       ]);
 
       setSummary(sumRes.data?.data ?? null);
+      setServers(srvRes.data?.data ?? []);
+      setAnomalies(anomRes.data?.data ?? []);
       setRecoveries(recRes.data?.data ?? []);
+      setRecommendations(recPlanRes.data?.data ?? []);
       setLatestMetric(latestRes.data?.data ?? null);
       setMetricHistory(histRes.data?.data ?? []);
       setCollectorStatus(colRes.data?.data ?? null);
       setDockerSnapshot(docRes.data?.data ?? null);
+      setLastUpdated(new Date());
       setError(null);
-    } catch (err) {
-      console.error('Failed to load dashboard telemetry:', err);
+    } catch {
       setError('Unable to connect to SHARP backend service.');
     } finally {
       setLoading(false);
@@ -105,36 +134,42 @@ export const DashboardPage: React.FC = () => {
     });
   }, [subscribe, fetchDashboardData]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64 text-slate-400 font-mono text-sm">
-        <RefreshCw className="w-5 h-5 animate-spin mr-3 text-[#22D3EE]" />
-        Querying live host telemetry & incident records...
-      </div>
-    );
-  }
+  const recentIncidents = useMemo(() => summary?.recentIncidents ?? [], [summary]);
+  const activeIncidentList = useMemo(
+    () => recentIncidents.filter((i) => !['RESOLVED', 'CLOSED'].includes(i.status)),
+    [recentIncidents]
+  );
+
+  const onlineServers = servers.filter((s) => s.status === 'ONLINE').length;
+  const degradedServers = servers.filter((s) => s.status === 'DEGRADED').length;
+  const offlineServers = servers.filter((s) => s.status === 'OFFLINE').length;
 
   const totalApps = summary?.totalApplications ?? 0;
   const healthyApps = summary?.healthyApplications ?? 0;
   const degradedApps = summary?.unhealthyApplications ?? 0;
-  const criticalIncidents = (summary?.recentIncidents ?? []).filter(
-    (i) => i.severity === 'CRITICAL' && !['RESOLVED', 'CLOSED'].includes(i.status)
-  ).length;
-  const activeRecoveries = recoveries.filter((r) =>
-    ['PENDING', 'AWAITING_APPROVAL', 'APPROVED', 'EXECUTING', 'VERIFYING'].includes(r.status)
-  ).length;
 
-  const overallHealthStatus =
-    criticalIncidents > 0
+  const criticalIncidents = activeIncidentList.filter((i) => i.severity === 'CRITICAL').length;
+  const highIncidents = activeIncidentList.filter((i) => i.severity === 'HIGH').length;
+  const mediumIncidents = activeIncidentList.filter((i) => i.severity === 'MEDIUM').length;
+  const lowIncidents = activeIncidentList.filter((i) => i.severity === 'LOW').length;
+
+  const activeAnomalies = anomalies.filter((a) => a.status === 'ACTIVE').length;
+
+  const overallHealthStatus: 'HEALTHY' | 'DEGRADED' | 'CRITICAL' =
+    criticalIncidents > 0 || offlineServers > 0
       ? 'CRITICAL'
-      : degradedApps > 0 || (summary?.activeIncidents ?? 0) > 0 || collectorStatus?.status === 'DEGRADED'
+      : degradedApps > 0 ||
+        degradedServers > 0 ||
+        (summary?.activeIncidents ?? 0) > 0 ||
+        collectorStatus?.status === 'DEGRADED'
       ? 'DEGRADED'
       : 'HEALTHY';
 
-  const availabilityChartData = [
-    { name: 'Healthy', count: healthyApps, fill: '#34D399' },
-    { name: 'Degraded / Down', count: degradedApps, fill: '#F59E0B' },
-  ];
+  const serverChartData = [
+    { name: 'Online', value: onlineServers, color: '#34D399' },
+    { name: 'Degraded', value: degradedServers, color: '#F59E0B' },
+    { name: 'Offline', value: offlineServers, color: '#F43F5E' },
+  ].filter((d) => d.value > 0);
 
   const timelineData = metricHistory.map((m) => ({
     time: new Date(m.collectedAt).toLocaleTimeString([], {
@@ -146,29 +181,45 @@ export const DashboardPage: React.FC = () => {
     memory: m.memoryPercent,
   }));
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64 text-[var(--text-muted)] font-mono text-sm">
+        <RefreshCw className="w-5 h-5 animate-spin mr-3 text-[#10B981] motion-reduce:animate-none" />
+        Querying live host telemetry &amp; incident records...
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-3 border-b border-dark-800">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-[var(--border-subtle)]">
         <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-100 font-mono">
-              Resilience Command Center
-            </h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="sharp-page-title font-mono">Resilience Command Center</h1>
             <StatusBadge status={overallHealthStatus} />
           </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Real-time host telemetry, monitored services, active incidents, and autonomous recovery operations.
+          <p className="text-xs text-[var(--text-muted)] mt-1">
+            Autonomous infrastructure observability, anomaly triage, root cause analysis, and controlled recovery.
+            {lastUpdated && (
+              <span className="font-mono text-[#64748B] ml-2">
+                · Last updated {lastUpdated.toLocaleTimeString()}
+              </span>
+            )}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="flex rounded-lg bg-dark-900 border border-dark-700 p-0.5 text-[11px] font-mono">
+
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] p-0.5 text-[11px] font-mono">
             {(['15m', '1h', '6h', '24h'] as const).map((w) => (
               <button
                 key={w}
+                type="button"
                 onClick={() => setTimeWindow(w)}
-                className={`px-2.5 py-1 rounded-md transition ${
-                  timeWindow === w ? 'bg-[#7C3AED]/20 text-[#A78BFA]' : 'text-slate-400 hover:text-slate-200'
+                className={`px-2.5 py-1 rounded-md transition-colors ${
+                  timeWindow === w
+                    ? 'bg-[#10B981]/15 text-[#34D399]'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                 }`}
               >
                 {w}
@@ -176,242 +227,372 @@ export const DashboardPage: React.FC = () => {
             ))}
           </div>
           <button
+            type="button"
             onClick={fetchDashboardData}
             disabled={isRefreshing}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-dark-850 hover:bg-dark-800 border border-dark-700 text-xs text-slate-300 font-medium transition"
+            className="sharp-btn-secondary"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-[#7C3AED]' : ''}`} />
-            Refresh
+            <RefreshCw
+              className={`w-3.5 h-3.5 ${
+                isRefreshing ? 'animate-spin text-[#10B981] motion-reduce:animate-none' : ''
+              }`}
+            />
+            <span>Refresh</span>
           </button>
         </div>
       </div>
 
-      {error && (
-        <div className="p-4 rounded-xl bg-rose-950/40 border border-rose-800/60 text-rose-300 text-xs flex items-center justify-between">
-          <span>{error}</span>
-          <span className="font-mono text-[11px] underline cursor-pointer" onClick={fetchDashboardData}>
-            Retry connection
-          </span>
-        </div>
-      )}
+      {error && <ErrorBanner message={error} onRetry={fetchDashboardData} />}
 
-      {/* Top Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Overall System Health Banner */}
+      <SystemHealthBanner
+        overallStatus={overallHealthStatus}
+        onlineServers={onlineServers}
+        degradedServers={degradedServers}
+        offlineServers={offlineServers}
+        activeIncidents={summary?.activeIncidents ?? 0}
+        activeAnomalies={activeAnomalies}
+        collectorStatus={collectorStatus?.status}
+      />
+
+      {/* KPI Section */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <StatCard
-          title="Host CPU & Memory"
-          value={latestMetric?.cpuPercent != null ? `${latestMetric.cpuPercent.toFixed(1)}%` : 'N/A'}
-          subtitle={
-            latestMetric?.memoryPercent != null
-              ? `Memory: ${latestMetric.memoryPercent.toFixed(1)}% (${latestMetric.hostName})`
-              : 'Awaiting telemetry'
-          }
-          icon={Cpu}
-          color="text-[#22D3EE]"
-        />
-        <StatCard
-          title="Monitored Services"
-          value={totalApps}
-          subtitle={`${healthyApps} Healthy / ${degradedApps} Degraded`}
-          icon={Layers}
-          trend={totalApps > 0 ? `${Math.round((healthyApps / totalApps) * 100)}% Healthy` : 'No Apps'}
-          trendType={degradedApps > 0 ? 'neutral' : 'positive'}
-          color="text-[#A78BFA]"
-        />
-        <StatCard
-          title="Critical & Active Incidents"
-          value={summary?.activeIncidents ?? 0}
-          subtitle={`${criticalIncidents} Critical severity`}
-          icon={AlertTriangle}
-          trend={criticalIncidents > 0 ? 'Critical' : summary?.activeIncidents ? 'Investigating' : 'All Clear'}
-          trendType={summary?.activeIncidents ? 'negative' : 'positive'}
-          color={criticalIncidents > 0 ? 'text-rose-400' : summary?.activeIncidents ? 'text-amber-400' : 'text-emerald-400'}
-        />
-        <StatCard
-          title="Active Recoveries"
-          value={activeRecoveries}
-          subtitle={`MTTR: ${summary?.avgRecoveryTimeSeconds != null ? `${summary.avgRecoveryTimeSeconds}s` : 'N/A'}`}
-          icon={RotateCcw}
-          trend={activeRecoveries > 0 ? 'In Progress' : 'Idle'}
-          trendType="neutral"
+          title="Monitored Servers"
+          value={servers.length}
+          subtitle={`${onlineServers} online · ${offlineServers} offline`}
+          icon={Server}
           color="text-[#34D399]"
+        />
+        <StatCard
+          title="Healthy Services"
+          value={`${healthyApps}/${totalApps}`}
+          subtitle={degradedApps > 0 ? `${degradedApps} degraded` : 'All registered healthy'}
+          icon={Layers}
+          color="text-[#38BDF8]"
+        />
+        <StatCard
+          title="Active Incidents"
+          value={summary?.activeIncidents ?? 0}
+          subtitle={`${criticalIncidents} critical severity`}
+          icon={AlertTriangle}
+          color={criticalIncidents > 0 ? 'text-[#F43F5E]' : 'text-[#F59E0B]'}
+        />
+        <StatCard
+          title="Active Anomalies"
+          value={activeAnomalies}
+          subtitle={`${anomalies.length} total recorded`}
+          icon={Radar}
+          color={activeAnomalies > 0 ? 'text-[#F59E0B]' : 'text-[#38BDF8]'}
+        />
+        <StatCard
+          title="Recovery Success"
+          value={
+            summary?.recoverySuccessRate != null
+              ? `${summary.recoverySuccessRate}%`
+              : 'N/A'
+          }
+          subtitle={`${recoveries.length} total executions`}
+          icon={CheckCircle2}
+          color="text-[#34D399]"
+        />
+        <StatCard
+          title="MTTR"
+          value={
+            summary?.avgRecoveryTimeSeconds != null
+              ? `${summary.avgRecoveryTimeSeconds}s`
+              : 'N/A'
+          }
+          subtitle="Mean time to resolve"
+          icon={Clock}
+          color="text-[#38BDF8]"
         />
       </div>
 
-      {/* Charts Section */}
+      {/* Resource Monitoring + Infrastructure Health */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Real System Health Timeline */}
-        <div className="lg:col-span-2 bg-dark-900 border border-dark-700/80 rounded-xl p-5 shadow-lg">
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        {/* Host Resource Utilization */}
+        <div className="lg:col-span-2 sharp-card p-5 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h2 className="text-sm font-semibold text-slate-200">Host System Telemetry ({timeWindow})</h2>
-              <p className="text-xs text-slate-500">
-                Real CPU % vs Memory % from {latestMetric?.hostName || 'host'} ({timelineData.length} samples)
+              <h2 className="sharp-section-title flex items-center gap-2">
+                <Cpu className="w-4 h-4 text-[#38BDF8]" />
+                <span>Host Resource Monitoring ({timeWindow})</span>
+              </h2>
+              <p className="text-xs text-[var(--text-muted)]">
+                Real CPU % and Memory % on {latestMetric?.hostName || 'host'} ({timelineData.length} samples)
               </p>
             </div>
-            {collectorStatus && <StatusBadge status={collectorStatus.status} />}
+            <div className="flex items-center gap-3">
+              {collectorStatus && <StatusBadge status={collectorStatus.status} />}
+              <Link
+                to="/monitoring/system"
+                className="text-xs font-mono text-[#34D399] hover:underline inline-flex items-center gap-1"
+              >
+                <span>Monitoring</span>
+                <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
           </div>
-          <div className="h-64 w-full">
+
+          <div className="h-56 w-full">
             {timelineData.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-xs font-mono text-slate-500 border border-dashed border-dark-800 rounded-lg">
+              <div className="h-full flex items-center justify-center text-xs font-mono text-[var(--text-muted)] border border-dashed border-[var(--border-subtle)] rounded-lg">
                 Awaiting telemetry samples in the selected {timeWindow} window.
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={timelineData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
-                    <linearGradient id="colorCpu" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#22D3EE" stopOpacity={0.35} />
-                      <stop offset="95%" stopColor="#22D3EE" stopOpacity={0.0} />
+                    <linearGradient id="cmdCpuGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.32} />
+                      <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
                     </linearGradient>
-                    <linearGradient id="colorMem" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#7C3AED" stopOpacity={0.35} />
-                      <stop offset="95%" stopColor="#7C3AED" stopOpacity={0.0} />
+                    <linearGradient id="cmdMemGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#38BDF8" stopOpacity={0.28} />
+                      <stop offset="95%" stopColor="#38BDF8" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#26324A" />
-                  <XAxis dataKey="time" stroke="#94A3B8" fontSize={11} />
-                  <YAxis stroke="#94A3B8" fontSize={11} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" />
+                  <XAxis dataKey="time" stroke="#8B9BB4" fontSize={10} />
+                  <YAxis stroke="#8B9BB4" fontSize={10} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#1B2540', borderColor: '#26324A', borderRadius: '8px', fontSize: '12px', color: '#E2E8F0' }}
+                    contentStyle={{
+                      backgroundColor: '#192230',
+                      borderColor: '#334155',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      color: '#F1F5F9',
+                    }}
                   />
-                  <Legend wrapperStyle={{ fontSize: 11, color: '#94A3B8' }} />
-                  <Area type="monotone" dataKey="cpu" name="CPU %" stroke="#22D3EE" strokeWidth={2} fillOpacity={1} fill="url(#colorCpu)" connectNulls />
-                  <Area type="monotone" dataKey="memory" name="Memory %" stroke="#7C3AED" strokeWidth={2} fillOpacity={1} fill="url(#colorMem)" connectNulls />
+                  <Legend wrapperStyle={{ fontSize: 11, color: '#8B9BB4' }} />
+                  <Area type="monotone" dataKey="cpu" name="CPU %" stroke="#10B981" strokeWidth={2} fillOpacity={1} fill="url(#cmdCpuGrad)" connectNulls />
+                  <Area type="monotone" dataKey="memory" name="Memory %" stroke="#38BDF8" strokeWidth={2} fillOpacity={1} fill="url(#cmdMemGrad)" connectNulls />
                 </AreaChart>
               </ResponsiveContainer>
             )}
           </div>
-        </div>
 
-        {/* Service Availability & Host Utilization */}
-        <div className="bg-dark-900 border border-dark-700/80 rounded-xl p-5 shadow-lg flex flex-col justify-between space-y-5">
-          <div>
-            <h2 className="text-sm font-semibold text-slate-200 mb-3">Service Availability & Host Resources</h2>
-            <div className="h-28 w-full mb-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={availabilityChartData} layout="vertical" margin={{ top: 0, right: 16, left: 10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#26324A" />
-                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 10, fill: '#94A3B8' }} />
-                  <YAxis type="category" dataKey="name" width={95} tick={{ fontSize: 10, fill: '#94A3B8', fontFamily: 'monospace' }} />
-                  <Tooltip contentStyle={{ backgroundColor: '#1B2540', borderColor: '#26324A', fontSize: 11 }} />
-                  <Bar dataKey="count" name="Services" radius={[0, 4, 4, 0]}>
-                    {availabilityChartData.map((entry) => (
-                      <Cell key={entry.name} fill={entry.fill} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-[var(--border-subtle)]">
+            {latestMetric?.cpuPercent != null ? (
+              <MetricBar label="Host CPU" value={latestMetric.cpuPercent} color="bg-[#10B981]" />
+            ) : (
+              <div className="text-xs font-mono text-[var(--text-muted)]">Host CPU: Awaiting telemetry</div>
+            )}
+            {latestMetric?.memoryPercent != null ? (
+              <MetricBar label="Host Memory" value={latestMetric.memoryPercent} color="bg-[#38BDF8]" />
+            ) : (
+              <div className="text-xs font-mono text-[var(--text-muted)]">Host Memory: Awaiting telemetry</div>
+            )}
+            {latestMetric?.diskPercent != null ? (
+              <MetricBar label="Host Disk" value={latestMetric.diskPercent} color="bg-[#F59E0B]" />
+            ) : (
+              <div className="text-xs font-mono text-[var(--text-muted)]">Host Disk: Awaiting telemetry</div>
+            )}
+          </div>
 
-            <div className="space-y-3">
-              {latestMetric?.cpuPercent != null ? (
-                <MetricBar label="Host CPU" value={latestMetric.cpuPercent} color="bg-[#22D3EE]" />
-              ) : (
-                <div className="text-xs font-mono text-slate-400">Host CPU: Awaiting telemetry</div>
-              )}
-              {latestMetric?.memoryPercent != null ? (
-                <MetricBar label="Host Memory" value={latestMetric.memoryPercent} color="bg-[#7C3AED]" />
-              ) : (
-                <div className="text-xs font-mono text-slate-400">Host Memory: Awaiting telemetry</div>
-              )}
-              {latestMetric?.diskPercent != null ? (
-                <MetricBar label="Host Disk" value={latestMetric.diskPercent} color="bg-[#34D399]" />
-              ) : (
-                <div className="text-xs font-mono text-slate-400">Host Disk: Awaiting telemetry</div>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-2.5 pt-3">
-              <Link
-                to="/monitoring/docker"
-                className="p-2.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[#22D3EE]/50 transition"
-              >
-                <div className="text-[10px] font-mono text-[var(--text-muted)] uppercase">Docker</div>
-                <div className={`text-xs font-bold font-mono mt-0.5 ${dockerSnapshot?.available ? 'text-[#22D3EE]' : 'text-[#F59E0B]'}`}>
-                  {dockerSnapshot?.available
-                    ? `${dockerSnapshot.containers.filter((c) => c.status === 'RUNNING').length}/${dockerSnapshot.containers.length} Running`
-                    : 'Unavailable'}
-                </div>
+          <div className="pt-2 border-t border-[var(--border-subtle)] flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-[var(--text-muted)]">
+            <span className="flex items-center gap-1.5">
+              <Wifi className="w-3.5 h-3.5 text-[#38BDF8]" />
+              Network RX / TX:{' '}
+              <strong className="text-[var(--text-main)]">
+                {formatRate(latestMetric?.netRecvRateBps)} / {formatRate(latestMetric?.netSentRateBps)}
+              </strong>
+            </span>
+            <div className="flex items-center gap-3">
+              <Link to="/monitoring/docker" className="hover:text-[#34D399]">
+                Docker:{' '}
+                {dockerSnapshot?.available
+                  ? `${dockerSnapshot.containers.filter((c) => c.status === 'RUNNING').length}/${dockerSnapshot.containers.length} Running`
+                  : 'Unavailable'}
               </Link>
-              <Link
-                to="/monitoring/processes"
-                className="p-2.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[#22D3EE]/50 transition"
-              >
-                <div className="text-[10px] font-mono text-[var(--text-muted)] uppercase">Processes</div>
-                <div className={`text-xs font-bold font-mono mt-0.5 ${collectorStatus?.processDataAvailable ? 'text-[#34D399]' : 'text-[#F59E0B]'}`}>
-                  {collectorStatus?.processDataAvailable ? 'Live Collector' : 'Awaiting sample'}
-                </div>
+              <Link to="/monitoring/processes" className="hover:text-[#34D399]">
+                Processes: {collectorStatus?.processDataAvailable ? 'Live Collector' : 'Awaiting'}
               </Link>
             </div>
           </div>
+        </div>
 
-          <div className="pt-3 border-t border-dark-800 flex items-center justify-between text-[11px] font-mono text-slate-400">
-            <span className="flex items-center gap-1.5">
-              <Wifi className="w-3.5 h-3.5 text-[#22D3EE]" />
-              Net RX / TX:
-            </span>
-            <span className="text-slate-200">
-              {formatRate(latestMetric?.netRecvRateBps)} / {formatRate(latestMetric?.netSentRateBps)}
-            </span>
+        {/* Infrastructure Health */}
+        <div className="sharp-card p-5 flex flex-col justify-between space-y-4">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="sharp-section-title flex items-center gap-2">
+              <Server className="w-4 h-4 text-[#34D399]" />
+              <span>Infrastructure Health</span>
+            </h2>
+            <Link
+              to="/servers"
+              className="text-xs font-mono text-[#34D399] hover:underline inline-flex items-center gap-1"
+            >
+              <span>All Nodes</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+
+          {serverChartData.length === 0 ? (
+            <div className="py-10 text-center text-xs font-mono text-[var(--text-muted)] border border-dashed border-[var(--border-subtle)] rounded-lg">
+              No monitored servers registered yet.
+            </div>
+          ) : (
+            <div className="h-40 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={serverChartData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={38}
+                    outerRadius={60}
+                    paddingAngle={3}
+                  >
+                    {serverChartData.map((entry) => (
+                      <Cell key={entry.name} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#192230',
+                      borderColor: '#334155',
+                      fontSize: 12,
+                      color: '#F1F5F9',
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 11, color: '#8B9BB4' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          <div className="divide-y divide-[var(--border-subtle)]">
+            {servers.slice(0, 4).map((srv) => (
+              <div key={srv.id} className="py-2 flex items-center justify-between gap-2 text-xs">
+                <div className="min-w-0">
+                  <div className="font-mono text-[var(--text-main)] truncate">{srv.hostName}</div>
+                  <div className="text-[10px] font-mono text-[var(--text-muted)]">
+                    {srv.ipAddress} · {srv.osType}
+                  </div>
+                </div>
+                <StatusBadge status={srv.status} />
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Recent Incidents & Recent Recovery Activities */}
+      {/* Incident Overview + AI Intelligence Panel */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-dark-900 border border-dark-700/80 rounded-xl p-5 shadow-lg">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-rose-400" />
-              Recent Incidents
+        <div className="sharp-card p-5 space-y-4">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="sharp-section-title flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-[#F43F5E]" />
+              <span>Incident Overview</span>
             </h2>
-            <Link to="/detection" className="text-xs font-mono text-[#A78BFA] hover:underline flex items-center gap-1">
-              View All <ArrowRight className="w-3 h-3" />
+            <Link
+              to="/incidents"
+              className="text-xs font-mono text-[#34D399] hover:underline inline-flex items-center gap-1"
+            >
+              <span>Manage Incidents</span>
+              <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
 
-          <div className="divide-y divide-dark-800">
-            {summary?.recentIncidents && summary.recentIncidents.length > 0 ? (
-              summary.recentIncidents.slice(0, 5).map((incident) => (
-                <div key={incident.id} className="py-3">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-slate-200">{incident.title}</span>
+          <div className="grid grid-cols-4 gap-2 text-center font-mono text-[11px]">
+            <div className="p-2 rounded-lg bg-[#F43F5E]/10 border border-[#F43F5E]/30">
+              <div className="text-[#F43F5E] font-bold text-sm">{criticalIncidents}</div>
+              <div className="text-[var(--text-muted)] text-[10px]">CRITICAL</div>
+            </div>
+            <div className="p-2 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
+              <div className="text-[#F59E0B] font-bold text-sm">{highIncidents}</div>
+              <div className="text-[var(--text-muted)] text-[10px]">HIGH</div>
+            </div>
+            <div className="p-2 rounded-lg bg-[#38BDF8]/10 border border-[#38BDF8]/30">
+              <div className="text-[#38BDF8] font-bold text-sm">{mediumIncidents}</div>
+              <div className="text-[var(--text-muted)] text-[10px]">MEDIUM</div>
+            </div>
+            <div className="p-2 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
+              <div className="text-[#34D399] font-bold text-sm">{lowIncidents}</div>
+              <div className="text-[var(--text-muted)] text-[10px]">LOW</div>
+            </div>
+          </div>
+
+          <div className="divide-y divide-[var(--border-subtle)]">
+            {recentIncidents.length > 0 ? (
+              recentIncidents.slice(0, 4).map((incident) => (
+                <div key={incident.id} className="py-2.5">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-xs font-medium text-[var(--text-main)] truncate">
+                      #{incident.id} {incident.title}
+                    </span>
                     <StatusBadge status={incident.status} />
                   </div>
-                  <p className="text-xs text-slate-400 line-clamp-1">{incident.description}</p>
-                  <div className="flex items-center gap-3 mt-1.5 text-[11px] font-mono text-slate-500">
-                    <span className="text-rose-400">Severity: {incident.severity}</span>
+                  <div className="flex items-center gap-2 text-[11px] font-mono text-[var(--text-muted)]">
+                    <span
+                      className={
+                        incident.severity === 'CRITICAL'
+                          ? 'text-[#F43F5E]'
+                          : incident.severity === 'HIGH'
+                          ? 'text-[#F59E0B]'
+                          : 'text-[#38BDF8]'
+                      }
+                    >
+                      {incident.severity}
+                    </span>
                     <span>·</span>
-                    <span>Agent: {incident.detectedByAgent}</span>
+                    <span className="truncate">{incident.detectedByAgent}</span>
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-xs text-slate-500 py-6 text-center font-mono">No active or recorded incidents.</p>
+              <p className="text-xs text-[var(--text-muted)] py-6 text-center font-mono">
+                No active or recorded incidents.
+              </p>
             )}
           </div>
         </div>
 
-        <div className="bg-dark-900 border border-dark-700/80 rounded-xl p-5 shadow-lg">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              Recent Recovery Activities
+        <AiIntelligencePanel
+          incidents={recentIncidents}
+          anomalies={anomalies}
+          recommendations={recommendations}
+        />
+      </div>
+
+      {/* Recovery Activity + Live Activity Feed */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="sharp-card p-5 space-y-4">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="sharp-section-title flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-[#34D399]" />
+              <span>Recovery Activity</span>
             </h2>
-            <Link to="/recovery/history" className="text-xs font-mono text-[#A78BFA] hover:underline flex items-center gap-1">
-              Full History <ArrowRight className="w-3 h-3" />
-            </Link>
+            <div className="flex items-center gap-3 text-xs font-mono">
+              <Link to="/recovery" className="text-[#38BDF8] hover:underline">
+                Manage
+              </Link>
+              <Link
+                to="/recovery/history"
+                className="text-[#34D399] hover:underline inline-flex items-center gap-1"
+              >
+                <span>History</span>
+                <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
           </div>
 
-          <div className="divide-y divide-dark-800">
+          <div className="divide-y divide-[var(--border-subtle)]">
             {recoveries.length > 0 ? (
               recoveries.slice(0, 5).map((act) => (
-                <div key={act.id} className="py-3 flex items-center justify-between gap-3">
-                  <div>
-                    <div className="text-xs font-semibold text-slate-200 font-mono">
-                      {act.actionType} <span className="text-slate-500 font-normal">· Incident #{act.incidentId}</span>
+                <div key={act.id} className="py-2.5 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-xs font-semibold text-[var(--text-main)] font-mono truncate">
+                      {act.actionType}{' '}
+                      <span className="text-[var(--text-muted)] font-normal">
+                        · Incident #{act.incidentId}
+                      </span>
                     </div>
-                    <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+                    <div className="text-[11px] text-[var(--text-muted)] font-mono mt-0.5 truncate">
                       Risk: {act.riskLevel} · Verification: {act.verificationStatus}
                     </div>
                   </div>
@@ -419,11 +600,18 @@ export const DashboardPage: React.FC = () => {
                 </div>
               ))
             ) : (
-              <p className="text-xs text-slate-500 py-6 text-center font-mono">No recovery actions recorded yet.</p>
+              <p className="text-xs text-[var(--text-muted)] py-6 text-center font-mono">
+                No recovery actions executed yet.
+              </p>
             )}
           </div>
         </div>
+
+        <LiveActivityFeed />
       </div>
+
+      {/* Quick Actions */}
+      <QuickActionsBar />
     </div>
   );
 };
