@@ -1,8 +1,28 @@
+export type UserRole = 'ROLE_ADMIN' | 'ROLE_OPERATOR';
+
 export interface User {
   id: number;
   username: string;
   email: string;
-  role: 'ROLE_ADMIN' | 'ROLE_OPERATOR';
+  role: UserRole;
+}
+
+export interface UserSummary {
+  id: number;
+  username: string;
+  email: string;
+  role: UserRole;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserPageResponse {
+  items: UserSummary[];
+  totalElements: number;
+  totalPages: number;
+  page: number;
+  size: number;
 }
 
 export interface AuthResponse {

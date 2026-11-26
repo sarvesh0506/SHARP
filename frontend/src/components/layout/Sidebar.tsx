@@ -24,12 +24,14 @@ import {
   ChevronRight,
   ShieldCheck,
   LogOut,
+  Users,
 } from 'lucide-react';
 
 interface NavItem {
   name: string;
   href?: string;
   icon: React.ElementType;
+  adminOnly?: boolean;
   children?: { name: string; href: string; icon: React.ElementType }[];
 }
 
@@ -66,6 +68,7 @@ const navigation: NavItem[] = [
   { name: 'AI Agents', href: '/agents', icon: Bot },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Audit Trail', href: '/audit', icon: FileText },
+  { name: 'User Management', href: '/users', icon: Users, adminOnly: true },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
@@ -147,7 +150,9 @@ export const Sidebar: React.FC = () => {
           </button>
         </div>
 
-        {navigation.map((item) => {
+        {navigation
+          .filter((item) => !item.adminOnly || isAdmin)
+          .map((item) => {
           if (item.children) {
             if (collapsed) {
               const Icon = item.icon;
