@@ -44,6 +44,7 @@ import { StatusBadge } from '../components/ui/StatusBadge';
 import { MetricBar } from '../components/ui/MetricBar';
 import { ErrorBanner } from '../components/ui/Banners';
 import { SystemHealthBanner } from '../components/dashboard/SystemHealthBanner';
+import { SelfHealingLifecycle } from '../components/dashboard/SelfHealingLifecycle';
 import { AiIntelligencePanel } from '../components/dashboard/AiIntelligencePanel';
 import { LiveActivityFeed } from '../components/dashboard/LiveActivityFeed';
 import { QuickActionsBar } from '../components/dashboard/QuickActionsBar';
@@ -53,6 +54,19 @@ const formatRate = (bps?: number | null) => {
   if (bps < 1024) return `${bps.toFixed(0)} B/s`;
   if (bps < 1024 * 1024) return `${(bps / 1024).toFixed(1)} KB/s`;
   return `${(bps / (1024 * 1024)).toFixed(2)} MB/s`;
+};
+
+const formatAge = (iso?: string | null) => {
+  if (!iso) return '—';
+  const ts = new Date(iso).getTime();
+  if (Number.isNaN(ts)) return '—';
+  const sec = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+  if (sec < 60) return `${sec}s ago`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  return `${Math.floor(hr / 24)}d ago`;
 };
 
 export const DashboardPage: React.FC = () => {
@@ -65,6 +79,8 @@ export const DashboardPage: React.FC = () => {
   const [metricHistory, setMetricHistory] = useState<SystemMetric[]>([]);
   const [collectorStatus, setCollectorStatus] = useState<CollectorStatus | null>(null);
   const [dockerSnapshot, setDockerSnapshot] = useState<DockerSnapshotResponse | null>(null);
+  const [aiReachable, setAiReachable] = useState<boolean | null>(null);
+
   const [timeWindow, setTimeWindow] = useState<'15m' | '1h' | '6h' | '24h'>('1h');
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,6 +104,7 @@ export const DashboardPage: React.FC = () => {
         histRes,
         colRes,
         docRes,
+        agentRes,
       ] = await Promise.all([
         apiClient.get('/dashboard/summary'),
         apiClient.get('/servers'),
@@ -100,6 +117,7 @@ export const DashboardPage: React.FC = () => {
         }),
         apiClient.get('/monitoring/collector/status'),
         apiClient.get('/monitoring/docker/containers'),
+        apiClient.get('/agents/status').catch(() => ({ data: { data: { reachable: false } } })),
       ]);
 
       setSummary(sumRes.data?.data ?? null);
@@ -111,6 +129,7 @@ export const DashboardPage: React.FC = () => {
       setMetricHistory(histRes.data?.data ?? []);
       setCollectorStatus(colRes.data?.data ?? null);
       setDockerSnapshot(docRes.data?.data ?? null);
+      setAiReachable(Boolean(agentRes.data?.data?.reachable));
       setLastUpdated(new Date());
       setError(null);
     } catch {
@@ -155,6 +174,39 @@ export const DashboardPage: React.FC = () => {
 
   const activeAnomalies = anomalies.filter((a) => a.status === 'ACTIVE').length;
 
+  const verifiedRecoveries = recoveries.filter(
+    (r) => r.status === 'VERIFIED' || r.verificationStatus === 'VERIFIED'
+  ).length;
+  const failedRecoveries = recoveries.filter((r) => r.status === 'FAILED').length;
+  const pendingRecoveries = recoveries.filter((r) =>
+    ['PENDING', 'AWAITING_APPROVAL', 'APPROVED', 'EXECUTING', 'VERIFYING'].includes(r.status)
+  ).length;
+
+  const degradationReasons: string[] = [];
+  if (criticalIncidents > 0) {
+    degradationReasons.push(`${criticalIncidents} critical incident${criticalIncidents > 1 ? 's' : ''} active`);
+  } else if ((summary?.activeIncidents ?? 0) > 0) {
+    degradationReasons.push(`${summary?.activeIncidents} active incident${(summary?.activeIncidents ?? 0) > 1 ? 's' : ''}`);
+  }
+  if (offlineServers > 0) {
+    degradationReasons.push(`${offlineServers} infrastructure node${offlineServers > 1 ? 's' : ''} offline`);
+  }
+  if (degradedServers > 0) {
+    degradationReasons.push(`${degradedServers} infrastructure node${degradedServers > 1 ? 's' : ''} degraded`);
+  }
+  if (degradedApps > 0) {
+    degradationReasons.push(`${degradedApps} monitored service${degradedApps > 1 ? 's' : ''} unhealthy`);
+  }
+  if (failedRecoveries > 0) {
+    degradationReasons.push(`${failedRecoveries} failed recovery attempt${failedRecoveries > 1 ? 's' : ''}`);
+  }
+  if (collectorStatus?.status === 'DEGRADED') {
+    degradationReasons.push('Telemetry collector degraded');
+  }
+  if (aiReachable === false) {
+    degradationReasons.push('AI service offline (deterministic fallback active)');
+  }
+
   const overallHealthStatus: 'HEALTHY' | 'DEGRADED' | 'CRITICAL' =
     criticalIncidents > 0 || offlineServers > 0
       ? 'CRITICAL'
@@ -192,7 +244,7 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* 1. Command Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-[var(--border-subtle)]">
         <div>
           <div className="flex flex-wrap items-center gap-3">
@@ -200,7 +252,7 @@ export const DashboardPage: React.FC = () => {
             <StatusBadge status={overallHealthStatus} />
           </div>
           <p className="text-xs text-[var(--text-muted)] mt-1">
-            Autonomous infrastructure observability, anomaly triage, root cause analysis, and controlled recovery.
+            Autonomous infrastructure observability, anomaly triage, root cause analysis, and closed-loop recovery.
             {lastUpdated && (
               <span className="font-mono text-[#64748B] ml-2">
                 · Last updated {lastUpdated.toLocaleTimeString()}
@@ -210,7 +262,11 @@ export const DashboardPage: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <div className="flex rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] p-0.5 text-[11px] font-mono">
+          <div
+            role="group"
+            aria-label="Telemetry time window"
+            className="flex rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] p-0.5 text-[11px] font-mono"
+          >
             {(['15m', '1h', '6h', '24h'] as const).map((w) => (
               <button
                 key={w}
@@ -244,9 +300,10 @@ export const DashboardPage: React.FC = () => {
 
       {error && <ErrorBanner message={error} onRetry={fetchDashboardData} />}
 
-      {/* Overall System Health Banner */}
+      {/* 2. Platform Health */}
       <SystemHealthBanner
         overallStatus={overallHealthStatus}
+        degradationReasons={degradationReasons}
         onlineServers={onlineServers}
         degradedServers={degradedServers}
         offlineServers={offlineServers}
@@ -255,69 +312,88 @@ export const DashboardPage: React.FC = () => {
         collectorStatus={collectorStatus?.status}
       />
 
-      {/* KPI Section */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        <StatCard
-          title="Monitored Servers"
-          value={servers.length}
-          subtitle={`${onlineServers} online · ${offlineServers} offline`}
-          icon={Server}
-          color="text-[#34D399]"
-        />
-        <StatCard
-          title="Healthy Services"
-          value={`${healthyApps}/${totalApps}`}
-          subtitle={degradedApps > 0 ? `${degradedApps} degraded` : 'All registered healthy'}
-          icon={Layers}
-          color="text-[#38BDF8]"
-        />
-        <StatCard
-          title="Active Incidents"
-          value={summary?.activeIncidents ?? 0}
-          subtitle={`${criticalIncidents} critical severity`}
-          icon={AlertTriangle}
-          color={criticalIncidents > 0 ? 'text-[#F43F5E]' : 'text-[#F59E0B]'}
-        />
-        <StatCard
-          title="Active Anomalies"
-          value={activeAnomalies}
-          subtitle={`${anomalies.length} total recorded`}
-          icon={Radar}
-          color={activeAnomalies > 0 ? 'text-[#F59E0B]' : 'text-[#38BDF8]'}
-        />
-        <StatCard
-          title="Recovery Success"
-          value={
-            summary?.recoverySuccessRate != null
-              ? `${summary.recoverySuccessRate}%`
-              : 'N/A'
-          }
-          subtitle={`${recoveries.length} total executions`}
-          icon={CheckCircle2}
-          color="text-[#34D399]"
-        />
-        <StatCard
-          title="MTTR"
-          value={
-            summary?.avgRecoveryTimeSeconds != null
-              ? `${summary.avgRecoveryTimeSeconds}s`
-              : 'N/A'
-          }
-          subtitle="Mean time to resolve"
-          icon={Clock}
-          color="text-[#38BDF8]"
-        />
-      </div>
+      {/* 3. KPI Overview */}
+      <section aria-label="Key Performance Indicators" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        <Link to="/servers" className="block">
+          <StatCard
+            title="Monitored Servers"
+            value={servers.length}
+            subtitle={`${onlineServers} online · ${offlineServers} offline`}
+            icon={Server}
+            color="text-[#34D399]"
+          />
+        </Link>
+        <Link to="/applications" className="block">
+          <StatCard
+            title="Healthy Services"
+            value={`${healthyApps}/${totalApps}`}
+            subtitle={degradedApps > 0 ? `${degradedApps} degraded` : 'All registered healthy'}
+            icon={Layers}
+            color="text-[#38BDF8]"
+          />
+        </Link>
+        <Link to="/incidents" className="block">
+          <StatCard
+            title="Active Incidents"
+            value={summary?.activeIncidents ?? 0}
+            subtitle={`${criticalIncidents} critical severity`}
+            icon={AlertTriangle}
+            color={criticalIncidents > 0 ? 'text-[#F43F5E]' : 'text-[#F59E0B]'}
+          />
+        </Link>
+        <Link to="/detection" className="block">
+          <StatCard
+            title="Active Anomalies"
+            value={activeAnomalies}
+            subtitle={`${anomalies.length} total recorded`}
+            icon={Radar}
+            color={activeAnomalies > 0 ? 'text-[#F59E0B]' : 'text-[#38BDF8]'}
+          />
+        </Link>
+        <Link to="/recovery/history" className="block">
+          <StatCard
+            title="Recovery Success"
+            value={
+              summary?.recoverySuccessRate != null
+                ? `${summary.recoverySuccessRate}%`
+                : 'N/A'
+            }
+            subtitle={`${recoveries.length} total executions`}
+            icon={CheckCircle2}
+            color="text-[#34D399]"
+          />
+        </Link>
+        <Link to="/analytics" className="block">
+          <StatCard
+            title="MTTR"
+            value={
+              summary?.avgRecoveryTimeSeconds != null
+                ? `${summary.avgRecoveryTimeSeconds}s`
+                : 'N/A'
+            }
+            subtitle="Mean time to resolve"
+            icon={Clock}
+            color="text-[#38BDF8]"
+          />
+        </Link>
+      </section>
 
-      {/* Resource Monitoring + Infrastructure Health */}
+      {/* 4. Self-Healing Lifecycle Centerpiece */}
+      <SelfHealingLifecycle
+        anomalies={anomalies}
+        incidents={recentIncidents}
+        recommendations={recommendations}
+        recoveries={recoveries}
+      />
+
+      {/* 5. Resource Intelligence + Infrastructure Intelligence */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Host Resource Utilization */}
-        <div className="lg:col-span-2 sharp-card p-5 space-y-4">
+        <section aria-labelledby="resource-heading" className="lg:col-span-2 sharp-card p-5 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h2 className="sharp-section-title flex items-center gap-2">
+              <h2 id="resource-heading" className="sharp-section-title flex items-center gap-2">
                 <Cpu className="w-4 h-4 text-[#38BDF8]" />
-                <span>Host Resource Monitoring ({timeWindow})</span>
+                <span>Host Resource Intelligence ({timeWindow})</span>
               </h2>
               <p className="text-xs text-[var(--text-muted)]">
                 Real CPU % and Memory % on {latestMetric?.hostName || 'host'} ({timelineData.length} samples)
@@ -329,7 +405,7 @@ export const DashboardPage: React.FC = () => {
                 to="/monitoring/system"
                 className="text-xs font-mono text-[#34D399] hover:underline inline-flex items-center gap-1"
               >
-                <span>Monitoring</span>
+                <span>System Monitoring</span>
                 <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
@@ -411,14 +487,13 @@ export const DashboardPage: React.FC = () => {
               </Link>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Infrastructure Health */}
-        <div className="sharp-card p-5 flex flex-col justify-between space-y-4">
+        <section aria-labelledby="infra-heading" className="sharp-card p-5 flex flex-col justify-between space-y-4">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="sharp-section-title flex items-center gap-2">
+            <h2 id="infra-heading" className="sharp-section-title flex items-center gap-2">
               <Server className="w-4 h-4 text-[#34D399]" />
-              <span>Infrastructure Health</span>
+              <span>Infrastructure Intelligence</span>
             </h2>
             <Link
               to="/servers"
@@ -429,12 +504,27 @@ export const DashboardPage: React.FC = () => {
             </Link>
           </div>
 
+          <div className="grid grid-cols-3 gap-2 text-center font-mono text-[11px]">
+            <div className="p-2 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
+              <div className="text-[#34D399] font-bold text-sm">{onlineServers}</div>
+              <div className="text-[var(--text-muted)] text-[10px]">ONLINE</div>
+            </div>
+            <div className="p-2 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
+              <div className="text-[#F59E0B] font-bold text-sm">{degradedServers}</div>
+              <div className="text-[var(--text-muted)] text-[10px]">DEGRADED</div>
+            </div>
+            <div className="p-2 rounded-lg bg-[#F43F5E]/10 border border-[#F43F5E]/30">
+              <div className="text-[#F43F5E] font-bold text-sm">{offlineServers}</div>
+              <div className="text-[var(--text-muted)] text-[10px]">OFFLINE</div>
+            </div>
+          </div>
+
           {serverChartData.length === 0 ? (
-            <div className="py-10 text-center text-xs font-mono text-[var(--text-muted)] border border-dashed border-[var(--border-subtle)] rounded-lg">
+            <div className="py-8 text-center text-xs font-mono text-[var(--text-muted)] border border-dashed border-[var(--border-subtle)] rounded-lg">
               No monitored servers registered yet.
             </div>
           ) : (
-            <div className="h-40 w-full">
+            <div className="h-36 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -443,8 +533,8 @@ export const DashboardPage: React.FC = () => {
                     nameKey="name"
                     cx="50%"
                     cy="50%"
-                    innerRadius={38}
-                    outerRadius={60}
+                    innerRadius={34}
+                    outerRadius={54}
                     paddingAngle={3}
                   >
                     {serverChartData.map((entry) => (
@@ -470,7 +560,7 @@ export const DashboardPage: React.FC = () => {
               <div key={srv.id} className="py-2 flex items-center justify-between gap-2 text-xs">
                 <div className="min-w-0">
                   <div className="font-mono text-[var(--text-main)] truncate">{srv.hostName}</div>
-                  <div className="text-[10px] font-mono text-[var(--text-muted)]">
+                  <div className="text-[10px] font-mono text-[var(--text-muted)] truncate">
                     {srv.ipAddress} · {srv.osType}
                   </div>
                 </div>
@@ -478,16 +568,16 @@ export const DashboardPage: React.FC = () => {
               </div>
             ))}
           </div>
-        </div>
+        </section>
       </div>
 
-      {/* Incident Overview + AI Intelligence Panel */}
+      {/* 6. Incident Intelligence + SHARP AI Intelligence Center */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="sharp-card p-5 space-y-4">
+        <section aria-labelledby="incident-intel-heading" className="sharp-card p-5 space-y-4">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="sharp-section-title flex items-center gap-2">
+            <h2 id="incident-intel-heading" className="sharp-section-title flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 text-[#F43F5E]" />
-              <span>Incident Overview</span>
+              <span>Incident Intelligence</span>
             </h2>
             <Link
               to="/incidents"
@@ -520,14 +610,14 @@ export const DashboardPage: React.FC = () => {
           <div className="divide-y divide-[var(--border-subtle)]">
             {recentIncidents.length > 0 ? (
               recentIncidents.slice(0, 4).map((incident) => (
-                <div key={incident.id} className="py-2.5">
-                  <div className="flex items-center justify-between gap-2 mb-1">
+                <div key={incident.id} className="py-2.5 space-y-1">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-medium text-[var(--text-main)] truncate">
                       #{incident.id} {incident.title}
                     </span>
                     <StatusBadge status={incident.status} />
                   </div>
-                  <div className="flex items-center gap-2 text-[11px] font-mono text-[var(--text-muted)]">
+                  <div className="flex flex-wrap items-center gap-2 text-[10px] font-mono text-[var(--text-muted)]">
                     <span
                       className={
                         incident.severity === 'CRITICAL'
@@ -540,7 +630,11 @@ export const DashboardPage: React.FC = () => {
                       {incident.severity}
                     </span>
                     <span>·</span>
-                    <span className="truncate">{incident.detectedByAgent}</span>
+                    <span>Age: {formatAge(incident.openedAt)}</span>
+                    <span>·</span>
+                    <span>RCA: {incident.rcaStatus || 'PENDING'}</span>
+                    <span>·</span>
+                    <span>Recovery: {incident.recoveryStatus || 'NONE'}</span>
                   </div>
                 </div>
               ))
@@ -550,22 +644,23 @@ export const DashboardPage: React.FC = () => {
               </p>
             )}
           </div>
-        </div>
+        </section>
 
         <AiIntelligencePanel
+          aiReachable={aiReachable}
           incidents={recentIncidents}
           anomalies={anomalies}
           recommendations={recommendations}
         />
       </div>
 
-      {/* Recovery Activity + Live Activity Feed */}
+      {/* 7. Recovery Operations + Real-Time Activity Timeline */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="sharp-card p-5 space-y-4">
+        <section aria-labelledby="recovery-ops-heading" className="sharp-card p-5 space-y-4">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="sharp-section-title flex items-center gap-2">
+            <h2 id="recovery-ops-heading" className="sharp-section-title flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-[#34D399]" />
-              <span>Recovery Activity</span>
+              <span>Recovery Operations</span>
             </h2>
             <div className="flex items-center gap-3 text-xs font-mono">
               <Link to="/recovery" className="text-[#38BDF8] hover:underline">
@@ -581,6 +676,21 @@ export const DashboardPage: React.FC = () => {
             </div>
           </div>
 
+          <div className="grid grid-cols-3 gap-2 text-center font-mono text-[11px]">
+            <div className="p-2 rounded-lg bg-[#10B981]/10 border border-[#10B981]/30">
+              <div className="text-[#34D399] font-bold text-sm">{verifiedRecoveries}</div>
+              <div className="text-[var(--text-muted)] text-[10px]">VERIFIED</div>
+            </div>
+            <div className="p-2 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30">
+              <div className="text-[#F59E0B] font-bold text-sm">{pendingRecoveries}</div>
+              <div className="text-[var(--text-muted)] text-[10px]">IN FLIGHT</div>
+            </div>
+            <div className="p-2 rounded-lg bg-[#F43F5E]/10 border border-[#F43F5E]/30">
+              <div className="text-[#F43F5E] font-bold text-sm">{failedRecoveries}</div>
+              <div className="text-[var(--text-muted)] text-[10px]">FAILED</div>
+            </div>
+          </div>
+
           <div className="divide-y divide-[var(--border-subtle)]">
             {recoveries.length > 0 ? (
               recoveries.slice(0, 5).map((act) => (
@@ -593,7 +703,7 @@ export const DashboardPage: React.FC = () => {
                       </span>
                     </div>
                     <div className="text-[11px] text-[var(--text-muted)] font-mono mt-0.5 truncate">
-                      Risk: {act.riskLevel} · Verification: {act.verificationStatus}
+                      Risk: {act.riskLevel} · Verification: {act.verificationStatus} · {formatAge(act.initiatedAt)}
                     </div>
                   </div>
                   <StatusBadge status={act.status} />
@@ -605,12 +715,12 @@ export const DashboardPage: React.FC = () => {
               </p>
             )}
           </div>
-        </div>
+        </section>
 
         <LiveActivityFeed />
       </div>
 
-      {/* Quick Actions */}
+      {/* 8. Quick Operations */}
       <QuickActionsBar />
     </div>
   );

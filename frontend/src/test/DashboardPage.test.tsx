@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { DashboardPage } from '../pages/DashboardPage';
 import apiClient from '../api/client';
@@ -36,7 +36,7 @@ describe('DashboardPage (Resilience Command Center)', () => {
     vi.clearAllMocks();
   });
 
-  it('renders real KPI data, system health, AI insights, recovery, and live feed', async () => {
+  it('renders lifecycle centerpiece, degradation reasons, KPIs, AI insights, recovery, and live feed', async () => {
     (apiClient.get as any).mockImplementation((url: string) => {
       switch (url) {
         case '/dashboard/summary':
@@ -62,6 +62,7 @@ describe('DashboardPage (Resilience Command Center)', () => {
                     detectedByAgent: 'Detection Agent',
                     rootCause: 'Heap exhaustion in worker service',
                     rcaStatus: 'COMPLETED',
+                    recoveryStatus: 'NONE',
                     openedAt: '2026-11-26T10:00:00Z',
                   },
                 ],
@@ -144,6 +145,10 @@ describe('DashboardPage (Resilience Command Center)', () => {
           return Promise.resolve({
             data: { data: { available: false, statusMessage: 'Offline', containers: [] } },
           });
+        case '/agents/status':
+          return Promise.resolve({
+            data: { data: { reachable: true } },
+          });
         default:
           return Promise.resolve({ data: { data: [] } });
       }
@@ -159,11 +164,59 @@ describe('DashboardPage (Resilience Command Center)', () => {
       expect(screen.getByText('Resilience Command Center')).toBeInTheDocument();
     });
 
+    expect(screen.getByText('Autonomous Self-Healing Lifecycle')).toBeInTheDocument();
+    expect(screen.getByText('DETECT')).toBeInTheDocument();
+    expect(screen.getByText('DIAGNOSE')).toBeInTheDocument();
+    expect(screen.getByText('RECOMMEND')).toBeInTheDocument();
+    expect(screen.getByText('EXECUTE')).toBeInTheDocument();
+    expect(screen.getByText('VERIFY')).toBeInTheDocument();
+    expect(screen.getByText('RESOLVE')).toBeInTheDocument();
+
+    expect(screen.getByText(/1 critical incident active/i)).toBeInTheDocument();
+    expect(screen.getByText('AI ENGINE ONLINE')).toBeInTheDocument();
     expect(screen.getByText('2/3')).toBeInTheDocument();
     expect(screen.getByText('Heap exhaustion in worker service')).toBeInTheDocument();
     expect(screen.getByText('RUN_HEALTH_PROBE')).toBeInTheDocument();
     expect(screen.getByText('CPU saturation on prod-node-01')).toBeInTheDocument();
     expect(screen.getAllByText('N/A').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('shows honest empty state in AI Intelligence when no insights exist', async () => {
+    (apiClient.get as any).mockImplementation((url: string) => {
+      if (url === '/dashboard/summary') {
+        return Promise.resolve({
+          data: {
+            data: {
+              totalApplications: 1,
+              healthyApplications: 1,
+              unhealthyApplications: 0,
+              activeIncidents: 0,
+              recoverySuccessRate: null,
+              avgRecoveryTimeSeconds: null,
+              avgCpuUsage: 10,
+              avgMemoryUsage: 20,
+              recentApplications: [],
+              recentIncidents: [],
+            },
+          },
+        });
+      }
+      if (url === '/agents/status') {
+        return Promise.resolve({ data: { data: { reachable: false } } });
+      }
+      return Promise.resolve({ data: { data: [] } });
+    });
+
+    render(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('No AI insights available yet.')).toBeInTheDocument();
+    });
+    expect(screen.getByText('FALLBACK MODE')).toBeInTheDocument();
   });
 
   it('shows error banner and retries when backend is unreachable', async () => {

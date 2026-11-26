@@ -5,6 +5,7 @@ import { StatusBadge } from '../ui/StatusBadge';
 
 interface SystemHealthBannerProps {
   overallStatus: 'HEALTHY' | 'DEGRADED' | 'CRITICAL';
+  degradationReasons: string[];
   onlineServers: number;
   degradedServers: number;
   offlineServers: number;
@@ -15,6 +16,7 @@ interface SystemHealthBannerProps {
 
 export const SystemHealthBanner: React.FC<SystemHealthBannerProps> = ({
   overallStatus,
+  degradationReasons,
   onlineServers,
   degradedServers,
   offlineServers,
@@ -30,14 +32,15 @@ export const SystemHealthBanner: React.FC<SystemHealthBannerProps> = ({
       : 'border-l-[#10B981]';
 
   const summaryMessage =
-    overallStatus === 'CRITICAL'
-      ? 'Critical severity incident or offline infrastructure requires immediate attention.'
-      : overallStatus === 'DEGRADED'
-      ? 'Partial degradation or active incidents detected across monitored targets.'
-      : 'All monitored infrastructure nodes, telemetry collectors, and services are operating normally.';
+    overallStatus === 'HEALTHY'
+      ? 'All monitored infrastructure nodes, telemetry collectors, and services are operating within thresholds.'
+      : degradationReasons.length > 0
+      ? degradationReasons.join(' · ')
+      : 'Partial degradation detected across monitored targets.';
 
   return (
-    <div
+    <section
+      aria-label="Platform Health Summary"
       className={`sharp-card border-l-4 ${borderAccent} p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4`}
     >
       <div className="space-y-1.5 min-w-0">
@@ -66,7 +69,7 @@ export const SystemHealthBanner: React.FC<SystemHealthBannerProps> = ({
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 sm:gap-5 text-xs font-mono shrink-0">
+      <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 text-xs font-mono shrink-0">
         <Link
           to="/servers"
           className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] transition-colors"
@@ -74,12 +77,8 @@ export const SystemHealthBanner: React.FC<SystemHealthBannerProps> = ({
           <Server className="w-3.5 h-3.5 text-[#34D399]" />
           <span className="text-[var(--text-muted)]">Nodes:</span>
           <span className="text-[#34D399] font-semibold">{onlineServers}</span>
-          {degradedServers > 0 && (
-            <span className="text-[#F59E0B]">/ {degradedServers} deg</span>
-          )}
-          {offlineServers > 0 && (
-            <span className="text-[#F43F5E]">/ {offlineServers} off</span>
-          )}
+          {degradedServers > 0 && <span className="text-[#F59E0B]">/ {degradedServers} deg</span>}
+          {offlineServers > 0 && <span className="text-[#F43F5E]">/ {offlineServers} off</span>}
         </Link>
 
         <Link
@@ -87,9 +86,7 @@ export const SystemHealthBanner: React.FC<SystemHealthBannerProps> = ({
           className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] transition-colors"
         >
           <AlertTriangle
-            className={`w-3.5 h-3.5 ${
-              activeIncidents > 0 ? 'text-[#F43F5E]' : 'text-[#34D399]'
-            }`}
+            className={`w-3.5 h-3.5 ${activeIncidents > 0 ? 'text-[#F43F5E]' : 'text-[#34D399]'}`}
           />
           <span className="text-[var(--text-muted)]">Incidents:</span>
           <span className="text-[var(--text-main)] font-semibold">{activeIncidents}</span>
@@ -100,15 +97,13 @@ export const SystemHealthBanner: React.FC<SystemHealthBannerProps> = ({
           className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] transition-colors"
         >
           <Radar
-            className={`w-3.5 h-3.5 ${
-              activeAnomalies > 0 ? 'text-[#F59E0B]' : 'text-[#38BDF8]'
-            }`}
+            className={`w-3.5 h-3.5 ${activeAnomalies > 0 ? 'text-[#F59E0B]' : 'text-[#38BDF8]'}`}
           />
           <span className="text-[var(--text-muted)]">Anomalies:</span>
           <span className="text-[var(--text-main)] font-semibold">{activeAnomalies}</span>
           <ArrowRight className="w-3 h-3 text-[var(--text-muted)]" />
         </Link>
       </div>
-    </div>
+    </section>
   );
 };
