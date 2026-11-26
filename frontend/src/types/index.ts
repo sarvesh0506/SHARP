@@ -67,6 +67,14 @@ export interface LiveEvent {
   payload: unknown;
 }
 
+export interface AuditPageResponse {
+  items: AuditLog[];
+  totalElements: number;
+  totalPages: number;
+  page: number;
+  size: number;
+}
+
 export interface AuthResponse {
   token: string;
   type: string;

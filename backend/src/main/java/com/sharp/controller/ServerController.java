@@ -40,4 +40,25 @@ public class ServerController {
         MonitoredServerDto created = serverService.registerServer(dto, username, request.getRemoteAddr());
         return ResponseEntity.ok(ApiResponse.ok("Infrastructure server registered successfully", created));
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<MonitoredServerDto>> updateServer(
+            @PathVariable Long id,
+            @Valid @RequestBody MonitoredServerDto dto,
+            Authentication authentication,
+            HttpServletRequest request) {
+        String username = authentication != null ? authentication.getName() : "OPERATOR";
+        MonitoredServerDto updated = serverService.updateServer(id, dto, username, request.getRemoteAddr());
+        return ResponseEntity.ok(ApiResponse.ok("Infrastructure server updated successfully", updated));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteServer(
+            @PathVariable Long id,
+            Authentication authentication,
+            HttpServletRequest request) {
+        String username = authentication != null ? authentication.getName() : "ADMIN";
+        serverService.deleteServer(id, username, request.getRemoteAddr());
+        return ResponseEntity.ok(ApiResponse.ok("Infrastructure server deleted successfully", null));
+    }
 }

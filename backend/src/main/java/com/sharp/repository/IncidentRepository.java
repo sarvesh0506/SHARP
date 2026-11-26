@@ -13,6 +13,7 @@ public interface IncidentRepository extends JpaRepository<Incident, Long> {
     List<Incident> findByStatusIn(List<String> statuses);
     List<Incident> findBySeverity(String severity);
     List<Incident> findByApplicationId(Long applicationId);
+    List<Incident> findByServerId(Long serverId);
     List<Incident> findTop10ByOrderByOpenedAtDesc();
     List<Incident> findAllByOrderByOpenedAtDesc();
     Optional<Incident> findTopByAffectedResourceAndStatusNotInOrderByOpenedAtDesc(String affectedResource, List<String> closedStatuses);
