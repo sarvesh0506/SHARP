@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { LiveEventsProvider } from './contexts/LiveEventsContext';
 import { AppLayout } from './components/layout/AppLayout';
 import { DashboardPage } from './pages/DashboardPage';
 import { ApplicationsPage } from './pages/ApplicationsPage';
@@ -21,11 +22,13 @@ import { AnalyticsPage } from './pages/AnalyticsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { UserManagementPage } from './pages/UserManagementPage';
 import { NotificationsPage } from './pages/NotificationsPage';
+import { LiveEventsPage } from './pages/LiveEventsPage';
 
 export const App: React.FC = () => {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <LiveEventsProvider>
+        <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
@@ -47,13 +50,15 @@ export const App: React.FC = () => {
             <Route path="analytics" element={<AnalyticsPage />} />
             <Route path="audit" element={<AuditPage />} />
             <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="events" element={<LiveEventsPage />} />
             <Route path="users" element={<UserManagementPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </BrowserRouter>
+        </BrowserRouter>
+      </LiveEventsProvider>
     </AuthProvider>
   );
 };

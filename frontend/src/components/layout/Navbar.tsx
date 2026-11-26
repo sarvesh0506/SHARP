@@ -1,14 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLiveEvents } from '../../contexts/LiveEventsContext';
 import { SharpLogo } from '../ui/SharpLogo';
 import { NotificationCenter } from './NotificationCenter';
 import apiClient from '../../api/client';
-import { LogOut, Cpu, Activity } from 'lucide-react';
+import { LogOut, Cpu, Activity, Radio } from 'lucide-react';
 
 type EngineHealthStatus = 'CHECKING' | 'ONLINE' | 'DEGRADED' | 'OFFLINE' | 'UNKNOWN';
 
 export const Navbar: React.FC = () => {
+  const navigate = useNavigate();
   const { user, logout, isAdmin } = useAuth();
+  const { status: wsStatus } = useLiveEvents();
   const [engineStatus, setEngineStatus] = useState<EngineHealthStatus>('CHECKING');
   const [aiStatus, setAiStatus] = useState<'CHECKING' | 'ONLINE' | 'OFFLINE'>('CHECKING');
   const inFlightRef = useRef(false);
@@ -96,6 +100,36 @@ export const Navbar: React.FC = () => {
             {aiStatus}
           </span>
         </div>
+
+        {/* Live WebSocket Indicator */}
+        <button
+          type="button"
+          onClick={() => navigate('/events')}
+          title="Open Live Event Stream"
+          className="hidden xl:flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[#22D3EE]/40 text-xs transition"
+        >
+          <Radio
+            className={`w-3.5 h-3.5 ${
+              wsStatus === 'CONNECTED'
+                ? 'text-[#34D399]'
+                : wsStatus === 'DISCONNECTED'
+                ? 'text-[#F43F5E]'
+                : 'text-[#F59E0B]'
+            }`}
+          />
+          <span className="text-[#94A3B8] font-medium">Stream:</span>
+          <span
+            className={`font-mono ${
+              wsStatus === 'CONNECTED'
+                ? 'text-[#34D399]'
+                : wsStatus === 'DISCONNECTED'
+                ? 'text-[#F43F5E]'
+                : 'text-[#F59E0B]'
+            }`}
+          >
+            {wsStatus}
+          </span>
+        </button>
 
         {/* Notification Center */}
         <NotificationCenter />

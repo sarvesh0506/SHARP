@@ -8,6 +8,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { notificationsApi } from '../../api/notifications';
+import { useLiveEvents } from '../../contexts/LiveEventsContext';
 import { NotificationItem } from '../../types';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 
@@ -43,6 +44,7 @@ const resolveTargetRoute = (n: NotificationItem): string | null => {
 
 export const NotificationCenter: React.FC = () => {
   const navigate = useNavigate();
+  const { subscribe } = useLiveEvents();
   const containerRef = useRef<HTMLDivElement>(null);
   const pollInFlightRef = useRef(false);
 
@@ -97,6 +99,16 @@ export const NotificationCenter: React.FC = () => {
       fetchUnreadCount();
     }
   }, [open, fetchNotifications, fetchUnreadCount]);
+
+  // Refresh unread count & list immediately when live events arrive via WebSocket
+  useEffect(() => {
+    return subscribe(() => {
+      fetchUnreadCount();
+      if (open) {
+        fetchNotifications();
+      }
+    });
+  }, [subscribe, open, fetchUnreadCount, fetchNotifications]);
 
   // Close dropdown on outside click
   useEffect(() => {

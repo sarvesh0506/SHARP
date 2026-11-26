@@ -58,6 +58,15 @@ export interface NotificationPageResponse {
   size: number;
 }
 
+export type LiveEventStatus = 'CONNECTING' | 'CONNECTED' | 'RECONNECTING' | 'DISCONNECTED';
+
+export interface LiveEvent {
+  id: string;
+  type: string;
+  timestamp: string;
+  payload: unknown;
+}
+
 export interface AuthResponse {
   token: string;
   type: string;

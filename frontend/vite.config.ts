@@ -22,6 +22,10 @@ export default defineConfig({
         target: 'http://localhost:8080',
         ws: true,
       },
+      '/ws-direct': {
+        target: 'http://localhost:8080',
+        ws: true,
+      },
     },
   },
 });

@@ -26,6 +26,7 @@ import {
   LogOut,
   Users,
   Bell,
+  Radio,
 } from 'lucide-react';
 
 interface NavItem {
@@ -70,6 +71,7 @@ const navigation: NavItem[] = [
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Audit Trail', href: '/audit', icon: FileText },
   { name: 'Notifications', href: '/notifications', icon: Bell },
+  { name: 'Live Events', href: '/events', icon: Radio },
   { name: 'User Management', href: '/users', icon: Users, adminOnly: true },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
