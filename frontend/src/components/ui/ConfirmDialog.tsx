@@ -53,8 +53,8 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           Icon: AlertTriangle,
         }
       : {
-          iconBg: 'bg-[#22D3EE]/15 border-[#22D3EE]/35 text-[#22D3EE]',
-          button: 'bg-[#7C3AED] hover:bg-[#6D28D9] text-white',
+          iconBg: 'bg-[#10B981]/15 border-[#10B981]/35 text-[#34D399]',
+          button: 'bg-[#10B981] hover:bg-[#059669] text-[#04120D]',
           Icon: ShieldAlert,
         };
 
@@ -71,15 +71,15 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
       aria-labelledby="confirm-dialog-title"
     >
       <div
-        className="w-full max-w-md rounded-xl bg-dark-900 border border-dark-700 shadow-2xl overflow-hidden"
+        className="w-full max-w-md rounded-xl bg-[var(--bg-card)] border border-[var(--border-strong)] shadow-[var(--shadow-elevated)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between p-5 border-b border-dark-700/80">
+        <div className="flex items-start justify-between p-5 border-b border-[var(--border-subtle)]">
           <div className="flex items-center gap-3">
             <div className={`p-2 rounded-lg border ${accent.iconBg}`}>
               <Icon className="w-5 h-5" />
             </div>
-            <h3 id="confirm-dialog-title" className="text-sm font-semibold text-slate-100">
+            <h3 id="confirm-dialog-title" className="text-sm font-semibold text-[var(--text-main)]">
               {title}
             </h3>
           </div>
@@ -87,7 +87,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             type="button"
             disabled={loading}
             onClick={onCancel}
-            className="p-1 rounded-md text-slate-400 hover:text-slate-200 hover:bg-dark-800 disabled:opacity-50 transition"
+            className="p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-elevated)] disabled:opacity-50 transition"
             aria-label="Close dialog"
           >
             <X className="w-4 h-4" />
@@ -95,20 +95,20 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         </div>
 
         <div className="p-5 space-y-3">
-          <p className="text-xs text-slate-300 leading-relaxed">{description}</p>
+          <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{description}</p>
           {details && (
-            <div className="p-3 rounded-lg bg-dark-850 border border-dark-700 text-xs font-mono text-slate-400">
+            <div className="p-3 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs font-mono text-[var(--text-muted)]">
               {details}
             </div>
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-2.5 px-5 py-4 bg-dark-850 border-t border-dark-700/80">
+        <div className="flex items-center justify-end gap-2.5 px-5 py-4 bg-[var(--bg-elevated)] border-t border-[var(--border-subtle)]">
           <button
             type="button"
             disabled={loading}
             onClick={onCancel}
-            className="px-3.5 py-2 rounded-lg text-xs font-medium bg-dark-800 border border-dark-700 text-slate-300 hover:text-white hover:bg-dark-700 disabled:opacity-50 transition"
+            className="sharp-btn-secondary"
           >
             {cancelLabel}
           </button>

@@ -8,10 +8,16 @@ interface EmptyStateProps {
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({ icon, title, description, action }) => (
-  <div className="flex flex-col items-center justify-center py-16 text-center">
-    {icon && <div className="mb-4 text-slate-600">{icon}</div>}
-    <h3 className="text-sm font-semibold text-slate-300 mb-1">{title}</h3>
-    {description && <p className="text-xs text-slate-500 max-w-sm">{description}</p>}
+  <div className="flex flex-col items-center justify-center py-14 px-4 text-center">
+    {icon && (
+      <div className="mb-3.5 w-11 h-11 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)]">
+        {icon}
+      </div>
+    )}
+    <h3 className="text-sm font-semibold text-[var(--text-main)] mb-1">{title}</h3>
+    {description && (
+      <p className="text-xs text-[var(--text-muted)] max-w-sm leading-relaxed">{description}</p>
+    )}
     {action && <div className="mt-4">{action}</div>}
   </div>
 );

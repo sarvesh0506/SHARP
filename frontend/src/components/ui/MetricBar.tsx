@@ -20,7 +20,7 @@ export const MetricBar: React.FC<MetricBarProps> = ({
   const pct = Math.min((value / max) * 100, 100);
   const barColor =
     color ??
-    (pct >= 90 ? 'bg-[#F43F5E]' : pct >= 75 ? 'bg-[#F59E0B]' : 'bg-[#7C3AED]');
+    (pct >= 90 ? 'bg-[#F43F5E]' : pct >= 75 ? 'bg-[#F59E0B]' : 'bg-[#10B981]');
 
   return (
     <div>
@@ -40,7 +40,14 @@ export const MetricBar: React.FC<MetricBarProps> = ({
           </span>
         )}
       </div>
-      <div className="w-full bg-[var(--bg-elevated)] h-2 rounded-full overflow-hidden border border-[var(--border-subtle)]">
+      <div
+        role="progressbar"
+        aria-label={label}
+        aria-valuemin={0}
+        aria-valuemax={max}
+        aria-valuenow={Number(value.toFixed(1))}
+        className="w-full bg-[var(--bg-elevated)] h-2 rounded-full overflow-hidden border border-[var(--border-subtle)]"
+      >
         <div
           className={`${barColor} h-full rounded-full transition-all duration-500`}
           style={{ width: `${pct}%` }}
