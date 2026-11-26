@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { SharpLogo } from '../ui/SharpLogo';
+import { NotificationCenter } from './NotificationCenter';
 import apiClient from '../../api/client';
 import { LogOut, Cpu, Activity } from 'lucide-react';
 
@@ -95,6 +96,9 @@ export const Navbar: React.FC = () => {
             {aiStatus}
           </span>
         </div>
+
+        {/* Notification Center */}
+        <NotificationCenter />
 
         {/* User profile & Logout */}
         <div className="flex items-center pl-4 border-l border-[var(--border-subtle)] space-x-3">

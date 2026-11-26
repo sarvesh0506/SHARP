@@ -20,6 +20,7 @@ import { RecoveryHistoryPage } from './pages/RecoveryHistoryPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { UserManagementPage } from './pages/UserManagementPage';
+import { NotificationsPage } from './pages/NotificationsPage';
 
 export const App: React.FC = () => {
   return (
@@ -45,6 +46,7 @@ export const App: React.FC = () => {
             <Route path="agents" element={<AgentsPage />} />
             <Route path="analytics" element={<AnalyticsPage />} />
             <Route path="audit" element={<AuditPage />} />
+            <Route path="notifications" element={<NotificationsPage />} />
             <Route path="users" element={<UserManagementPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>

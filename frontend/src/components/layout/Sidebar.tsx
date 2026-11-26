@@ -25,6 +25,7 @@ import {
   ShieldCheck,
   LogOut,
   Users,
+  Bell,
 } from 'lucide-react';
 
 interface NavItem {
@@ -68,6 +69,7 @@ const navigation: NavItem[] = [
   { name: 'AI Agents', href: '/agents', icon: Bot },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Audit Trail', href: '/audit', icon: FileText },
+  { name: 'Notifications', href: '/notifications', icon: Bell },
   { name: 'User Management', href: '/users', icon: Users, adminOnly: true },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];

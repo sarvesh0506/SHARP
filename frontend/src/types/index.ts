@@ -25,6 +25,39 @@ export interface UserPageResponse {
   size: number;
 }
 
+export type NotificationType =
+  | 'ANOMALY_DETECTED'
+  | 'INCIDENT_CREATED'
+  | 'INCIDENT_UPDATED'
+  | 'RECOVERY_APPROVAL_REQUIRED'
+  | 'RECOVERY_STARTED'
+  | 'RECOVERY_SUCCEEDED'
+  | 'RECOVERY_FAILED'
+  | 'INCIDENT_RESOLVED'
+  | 'SYSTEM_ALERT';
+
+export interface NotificationItem {
+  id: number;
+  type: NotificationType | string;
+  severity: string;
+  title: string;
+  message: string;
+  anomalyId?: number | null;
+  incidentId?: number | null;
+  recoveryExecutionId?: number | null;
+  read: boolean;
+  readAt?: string | null;
+  createdAt: string;
+}
+
+export interface NotificationPageResponse {
+  items: NotificationItem[];
+  totalElements: number;
+  totalPages: number;
+  page: number;
+  size: number;
+}
+
 export interface AuthResponse {
   token: string;
   type: string;
