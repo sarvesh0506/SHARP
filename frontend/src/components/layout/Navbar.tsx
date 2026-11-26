@@ -14,6 +14,7 @@ import {
   LogOut,
   Menu,
   Radio,
+  Search,
   Shield,
   Users,
 } from 'lucide-react';
@@ -48,9 +49,10 @@ const ROUTE_META: Record<string, RouteMeta> = {
 
 interface NavbarProps {
   onOpenMobileMenu?: () => void;
+  onOpenSearch?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onOpenMobileMenu }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onOpenMobileMenu, onOpenSearch }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout, isAdmin } = useAuth();
@@ -174,8 +176,26 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMobileMenu }) => {
         </nav>
       </div>
 
-      {/* Right: Operational Status Pills + Notifications + User Menu */}
+      {/* Right: Search + Operational Status Pills + Notifications + User Menu */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        {onOpenSearch && (
+          <button
+            type="button"
+            onClick={onOpenSearch}
+            title="Global Search (Ctrl+K / Cmd+K)"
+            aria-label="Open global search"
+            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[#A4C3A2]/50 text-xs text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
+          >
+            <Search className="w-3.5 h-3.5 text-[#A4C3A2]" />
+            <span className="hidden md:inline">Search...</span>
+            <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[10px] text-[var(--text-muted)]">
+              {typeof navigator !== 'undefined' && /Mac|iPhone|iPad/i.test(navigator.platform)
+                ? '⌘K'
+                : 'Ctrl+K'}
+            </kbd>
+          </button>
+        )}
+
         {/* Live Engine Status */}
         <div
           title="Backend Engine Health"

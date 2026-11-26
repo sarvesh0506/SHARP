@@ -161,7 +161,7 @@ describe('DashboardPage (Resilience Command Center)', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Resilience Command Center')).toBeInTheDocument();
+      expect(screen.getByText('RESILIENCE COMMAND CENTER')).toBeInTheDocument();
     });
 
     expect(screen.getByText('Autonomous Self-Healing Lifecycle')).toBeInTheDocument();
