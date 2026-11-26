@@ -27,7 +27,7 @@ export default {
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-        mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+        mono: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
       },
       boxShadow: {
         surface: 'var(--shadow-surface)',

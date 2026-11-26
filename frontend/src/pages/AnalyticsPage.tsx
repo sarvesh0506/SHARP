@@ -412,7 +412,7 @@ export const AnalyticsPage: React.FC = () => {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#24352F" />
-                  <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#98AB9C', fontFamily: 'monospace' }} />
+                  <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#98AB9C', fontFamily: 'Inter, system-ui, sans-serif' }} />
                   <YAxis domain={[0, 100]} unit="%" tick={{ fontSize: 10, fill: '#98AB9C' }} />
                   <Tooltip
                     contentStyle={{ backgroundColor: '#1D2B26', borderColor: '#24352F', fontSize: 12, color: '#EAE7D6' }}
@@ -440,7 +440,7 @@ export const AnalyticsPage: React.FC = () => {
               <ResponsiveContainer width="100%" height={230}>
                 <BarChart data={incidentTrendData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#24352F" />
-                  <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#98AB9C', fontFamily: 'monospace' }} />
+                  <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#98AB9C', fontFamily: 'Inter, system-ui, sans-serif' }} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: '#98AB9C' }} />
                   <Tooltip
                     contentStyle={{ backgroundColor: '#1D2B26', borderColor: '#24352F', fontSize: 12, color: '#EAE7D6' }}
@@ -498,7 +498,7 @@ export const AnalyticsPage: React.FC = () => {
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={recoveryDistribution}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#24352F" />
-                  <XAxis dataKey="status" tick={{ fontSize: 10, fill: '#98AB9C', fontFamily: 'monospace' }} />
+                  <XAxis dataKey="status" tick={{ fontSize: 10, fill: '#98AB9C', fontFamily: 'Inter, system-ui, sans-serif' }} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: '#98AB9C' }} />
                   <Tooltip
                     contentStyle={{ backgroundColor: '#1D2B26', borderColor: '#24352F', fontSize: 12 }}
@@ -523,7 +523,7 @@ export const AnalyticsPage: React.FC = () => {
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={anomalyMethodData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#24352F" />
-                  <XAxis dataKey="method" tick={{ fontSize: 10, fill: '#98AB9C', fontFamily: 'monospace' }} />
+                  <XAxis dataKey="method" tick={{ fontSize: 10, fill: '#98AB9C', fontFamily: 'Inter, system-ui, sans-serif' }} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: '#98AB9C' }} />
                   <Tooltip
                     contentStyle={{ backgroundColor: '#1D2B26', borderColor: '#24352F', fontSize: 12 }}

@@ -322,7 +322,7 @@ export const SystemMonitoringPage: React.FC = () => {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#24352F" />
-                  <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#98AB9C', fontFamily: 'monospace' }} />
+                  <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#98AB9C', fontFamily: 'Inter, system-ui, sans-serif' }} />
                   <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: '#98AB9C' }} tickFormatter={(v) => `${v}%`} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend wrapperStyle={{ fontSize: 11, color: '#98AB9C' }} />

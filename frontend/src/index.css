@@ -56,6 +56,21 @@
     width: 100%;
     max-width: none;
     box-sizing: border-box;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  body,
+  code,
+  pre,
+  kbd,
+  samp,
+  .font-mono {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  .font-mono,
+  .sharp-kpi-value {
+    font-variant-numeric: tabular-nums;
   }
 
   body {
